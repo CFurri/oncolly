@@ -5,7 +5,7 @@ import com.google.gson.annotations.SerializedName
 // Peticio
 data class LoginRequest(
     val email: String,
-    val pass: String
+    val password: String
 )
 
 // Resposta

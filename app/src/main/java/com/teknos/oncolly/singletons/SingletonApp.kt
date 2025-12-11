@@ -1,19 +1,24 @@
 package com.teknos.oncolly.singletons
 
+import com.teknos.oncolly.network.ApiService
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 class SingletonApp private constructor() {
-    // --- AQUI GUARDEM LES NOSTRES COSES GLOBALS ---
+    // --- AQUI GUARDEM LES NOSTRES 'COSES' GLOBALS ---
 
-    // 1. La connexió a Retrofit
+    // La connexió a Retrofit
     val retrofit: Retrofit by lazy {
         Retrofit.Builder()
             .baseUrl("http://10.0.2.2:8080/") // Recorda: IP Emulador
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
+    // Per cridar el servidor
+    val api: ApiService by lazy {
+        retrofit.create(ApiService::class.java)
+    }
 
-    // 2. Les dades de sessió (Usuari actual)
+    // Les dades de sessió (Usuari actual)
     var userId: Int? = null
     var userRole: String? = null // "DOCTOR" o "PACIENT"
     var userToken: String? = null

@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,7 +23,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.teknos.oncolly.network.LoginRequest
 import com.teknos.oncolly.singletons.SingletonApp
+import kotlinx.coroutines.launch
+
 
 // --- PANTALLA DE LOGIN ---
 
@@ -31,8 +35,8 @@ fun LoginScreen(onLoginSuccess: (String) -> Unit) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var missatgeError by remember { mutableStateOf(false) }
-
     val scope = rememberCoroutineScope()
+
 
     Column(
         modifier = Modifier.fillMaxSize().padding(32.dp),
@@ -58,42 +62,48 @@ fun LoginScreen(onLoginSuccess: (String) -> Unit) {
 
         Button(
             onClick = {
-                // 2. LLANCEM LA COROUTINE (FIL SECUNDARI)
+                // 2. LLANCEM LA COROUTINE
                 scope.launch {
                     try {
-                        // A. Obtenim l'API des del Singleton del profe
-                        val retrofit = SingletonApp.getInstance().retrofit
-                        val apiService = retrofit.create(ApiService::class.java)
+                        // A. Obtenim l'API directament (ja la tenim creada al Singleton)
+                        val api = SingletonApp.getInstance().api
 
-                        // B. Fem la crida REAL al servidor (això triga uns mil·lisegons)
-                        // NOTA: Si el servidor no està en marxa, això saltarà al 'catch'
-                        val resposta = apiService.login(LoginRequest(email, password))
+                        // B. Fem la crida REAL al servidor
+                        val response = api.login(LoginRequest(email, password))
 
-                        // C. Si tot va bé, guardem al Singleton
-                        SingletonApp.getInstance().ferLogin(
-                            id = resposta.id,
-                            role = resposta.role,
-                            token = resposta.token
-                        )
-
-                        // D. Canviem de pantalla
-                        missatgeError = false
-                        onLoginSuccess(resposta.role)
+                        // C. Comprovem si la resposta és vàlida (Code 200-299)
+                        if (response.isSuccessful) {
+                            val body = response.body()
+                            if (body != null) {
+                                // Tot ha anat bé, guardem sessió
+                                SingletonApp.getInstance().ferLogin(
+                                    id = body.id,
+                                    role = body.role,
+                                    token = body.token
+                                )
+                                missatgeError = false
+                                onLoginSuccess(body.role)
+                            } else {
+                                throw Exception("Resposta buida")
+                            }
+                        } else {
+                            // Si el servidor respon error (Ex: 401 Unauthorized)
+                            throw Exception("Error del servidor: ${response.code()}")
+                        }
 
                     } catch (e: Exception) {
-                        // E. SI FALLA (o el servidor està apagat)
-                        // De moment, mantenim la "porta del darrere" per poder treballar:
+                        // E. SI FALLA (o el servidor està apagat), fem servir la porta del darrere
+                        println("Error de xarxa: ${e.message}")
+
                         if (email == "doc" && password == "1234") {
-                            // Guardem dades falses al Singleton per no petar
                             SingletonApp.getInstance().ferLogin(1, "DOCTOR", "token_fals")
                             onLoginSuccess("doctor")
                         } else if (email == "pacient" && password == "1234") {
                             SingletonApp.getInstance().ferLogin(2, "PACIENT", "token_fals")
                             onLoginSuccess("pacient")
                         } else {
-                            // Error real
+                            // Error real i credencials incorrectes
                             missatgeError = true
-                            println("Error de connexió: ${e.message}")
                         }
                     }
                 }

@@ -1,5 +1,6 @@
 package com.teknos.oncolly.network
 
+import com.teknos.oncolly.entity.Activity
 import com.teknos.oncolly.entity.CreateActivityRequest
 import com.teknos.oncolly.entity.Pacient
 import retrofit2.Response
@@ -8,6 +9,7 @@ import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
+import retrofit2.http.Path
 
 interface ApiService {
     @POST("api/auth/login")
@@ -24,4 +26,10 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Body request: CreateActivityRequest
     ): Response<Void>
+
+    @GET("/api/patients/{patientId}/activities")
+    suspend fun getActivities(
+        @Header("Authorization") token: String,
+        @Path("patientId") patientId: String // <--- AFEGEIX AIXÒ
+    ): Response<List<Activity>>
 }

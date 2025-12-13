@@ -62,7 +62,7 @@ fun DynamicActivityScreen(
                     OutlinedTextField(
                         value = valorInput,
                         onValueChange = { if (it.all { char -> char.isDigit() }) valorInput = it },
-                        label = { Text("Introdueix quantitat") },
+                        label = { Text(activityType.labelInput) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -71,7 +71,7 @@ fun DynamicActivityScreen(
                     OutlinedTextField(
                         value = valorInput,
                         onValueChange = { valorInput = it },
-                        label = { Text("Escriu aquí...") },
+                        label = { Text(activityType.labelInput) },
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -79,7 +79,7 @@ fun DynamicActivityScreen(
                     OutlinedTextField(
                         value = valorInput,
                         onValueChange = { valorInput = it },
-                        label = { Text("Explica com et sents...") },
+                        label = { Text(activityType.labelInput) },
                         modifier = Modifier.fillMaxWidth().height(150.dp), // Més alt
                         maxLines = 5
                     )

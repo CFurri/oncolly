@@ -1,4 +1,4 @@
-package com.teknos.oncolly.screens
+package com.teknos.oncolly.screens.auth
 
 import android.widget.Toast
 import androidx.compose.foundation.Image

@@ -1,5 +1,6 @@
 package com.teknos.oncolly.network
 
+import com.teknos.oncolly.entity.CreateActivityRequest
 import com.teknos.oncolly.entity.Pacient
 import retrofit2.Response
 
@@ -16,4 +17,11 @@ interface ApiService {
     suspend fun getPacients(
         @Header("Authorization") token: String
     ): Response<List<Pacient>>
+
+    // --- GUARDAR ACTIVITATS ---
+    @POST("api/activities")
+    suspend fun createActivity(
+        @Header("Authorization") token: String,
+        @Body request: CreateActivityRequest
+    ): Response<Void>
 }

@@ -1,16 +1,20 @@
 package com.teknos.oncolly.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.teknos.oncolly.screens.DoctorScreen
-import com.teknos.oncolly.screens.LoginScreen
-import com.teknos.oncolly.screens.PacientDetailScreen // <--- Assegura't de tenir aquest import
-import com.teknos.oncolly.screens.PacientScreen
-import com.teknos.oncolly.screens.SplashScreen
+import com.teknos.oncolly.screens.doctor.DoctorScreen
+import com.teknos.oncolly.screens.auth.LoginScreen
+import com.teknos.oncolly.screens.doctor.PacientDetailScreen
+import com.teknos.oncolly.screens.patient.ActivityType
+import com.teknos.oncolly.screens.patient.DynamicActivityScreen
+import com.teknos.oncolly.screens.patient.PacientScreen
+import com.teknos.oncolly.screens.splash.SplashScreen
+import com.teknos.oncolly.viewmodel.PatientViewModel
 
 @Composable
 fun AppNavigation() {
@@ -56,7 +60,6 @@ fun AppNavigation() {
             )
         }
 
-        // --- AQUESTA ÉS LA PART QUE T'HAVIES DEIXAT ---
         composable(
             route = "detail_pacient/{id}",
             arguments = listOf(navArgument("id") { type = NavType.StringType }) // Recorda: String, no Int
@@ -67,15 +70,35 @@ fun AppNavigation() {
                 onBack = { navController.popBackStack() }
             )
         }
-        // ---------------------------------------------
 
-        // AQUESTA ÉS LA QUE HAS ARREGLAT ARA
         composable("home_pacient") {
             PacientScreen(
                 onLogout = {
                     navController.navigate("login") { popUpTo(0) }
+                },
+                onActivityClick = { activityId ->
+                    // Aquesta és la màgia: rebem "walking" i naveguem a la pantalla dinàmica
+                    navController.navigate("activity_screen/$activityId")
                 }
             )
+        }
+
+        // --- Per connectar les boles de pacient amb l'activitat ---
+        composable(route = "activity_screen/{typeId}") { backStackEntry ->
+            val typeId = backStackEntry.arguments?.getString("typeId")
+            val type = ActivityType.values().find { it.id == typeId }
+
+            if (type != null) {
+                // 1. Inicialitzem el ViewModel
+                val patientViewModel: PatientViewModel = viewModel()
+
+                // 2. Cridem la pantalla (Fixa't bé en les comes i el parèntesi final)
+                DynamicActivityScreen(
+                    activityType = type,
+                    viewModel = patientViewModel, // <--- COMA IMPORTANT
+                    onBack = { navController.popBackStack() } // <--- DINS del parèntesi
+                )
+            }
         }
     }
 }

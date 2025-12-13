@@ -1,4 +1,4 @@
-package com.teknos.oncolly.screens
+package com.teknos.oncolly.screens.doctor
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable

@@ -9,7 +9,7 @@ class SingletonApp private constructor() {
     // La connexió a Retrofit
     val retrofit: Retrofit by lazy {
         Retrofit.Builder()
-            .baseUrl("http://10.0.2.2:8080/") // Recorda: IP Emulador
+            .baseUrl("http://oncolly.arxan.me")
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
@@ -19,12 +19,12 @@ class SingletonApp private constructor() {
     }
 
     // Les dades de sessió (Usuari actual)
-    var userId: Int? = null
+    var userId: String? = null
     var userRole: String? = null // "DOCTOR" o "PACIENT"
     var userToken: String? = null
 
     // Funcions per gestionar la sessió
-    fun ferLogin(id: Int, role: String, token: String) {
+    fun ferLogin(id: String, role: String, token: String) {
         this.userId = id
         this.userRole = role
         this.userToken = token

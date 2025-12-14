@@ -5,14 +5,18 @@ import com.teknos.oncolly.entity.Pacient
 import com.teknos.oncolly.network.ApiService
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import com.google.gson.GsonBuilder
 class SingletonApp private constructor() {
     // --- AQUI GUARDEM LES NOSTRES 'COSES' GLOBALS ---
 
     // --- RETROFIT i API ---
     val retrofit: Retrofit by lazy {
+        val gson = GsonBuilder()
+            .setLenient() // accepta respostes una mica malformades
+            .create()
         Retrofit.Builder()
             .baseUrl("http://oncolly.arxan.me")
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
     }
     // Per cridar el servidor

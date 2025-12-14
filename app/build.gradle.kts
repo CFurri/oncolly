@@ -6,14 +6,12 @@ plugins {
 
 android {
     namespace = "com.teknos.oncolly"
-    compileSdk {
-        version = release(36)
-    }
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.teknos.oncolly"
-        minSdk = 24
-        targetSdk = 36
+        minSdk = 26
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
 
@@ -58,8 +56,10 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
+    implementation("androidx.compose.material3:material3:1.2.1")
+
     // La bruixula de la App
-    implementation("androidx.navigation:navigation-compose:2.9.6")
+    implementation("androidx.navigation:navigation-compose:2.8.3")
 
     // Retrofit (Per fer les crides al servidor)
     implementation("com.squareup.retrofit2:retrofit:2.9.0")

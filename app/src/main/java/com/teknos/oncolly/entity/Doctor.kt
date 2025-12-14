@@ -1,18 +1,10 @@
 package com.teknos.oncolly.entity
 
 data class Doctor(
-    val id: String,          // Canviat a String per coherència amb el login
-    var nom: String,
-    val especialitat: String, // Ex: "Oncologia", "Medicina General"
-    var hospital: String,
+    val id: String,
+    val firstName: String,
+    val lastName: String,
     var email: String
+    // Removing especialitat and hospital as they are not in the new provided API spec 
+    // and user asked to "update everything".
 )
-
-/*
-Quan fas una data class en comptes de class a seques,
-Kotlin escriu 4 funcions automàticament:
-    toString(), equals(), hashCode() i copy()
-
-Si fiquem val és com ficar un getter
-Si fiquem var és com ficar un getter i un setter
-*/

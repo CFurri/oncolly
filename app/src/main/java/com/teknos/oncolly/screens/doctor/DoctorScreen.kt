@@ -5,7 +5,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
@@ -15,6 +18,10 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.outlined.DateRange
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -25,15 +32,14 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -55,6 +61,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -62,10 +70,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.teknos.oncolly.entity.Appointment
-import com.teknos.oncolly.entity.Pacient // Assegura't que l'import és correcte
+import com.teknos.oncolly.entity.Pacient
 import com.teknos.oncolly.singletons.SingletonApp
 import com.teknos.oncolly.viewmodel.AppointmentUiState
 import com.teknos.oncolly.viewmodel.AppointmentViewModel
+import com.teknos.oncolly.viewmodel.DoctorViewModel
 import kotlinx.coroutines.delay
 import java.time.LocalDate
 import java.time.Instant
@@ -75,11 +84,17 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.Locale
 
-// Definim les 3 opcions del menú inferior
+// --- PALETA DE COLORS UNIFICADA ---
+val PrimaryBlue = Color(0xFF259DF4)
+val SecondaryGreen = Color(0xFF66BB6A)
+val TextDark = Color(0xFF2C3E50)
+val TextGrey = Color(0xFF7F8C8D)
+val BgLight = Color(0xFFF8F9FA)
+
 enum class DoctorTab(val icon: ImageVector, val title: String) {
-    PACIENTS(Icons.Default.Home, "Pacients"),
-    AGENDA(Icons.Default.DateRange, "Agenda"),
-    PERFIL(Icons.Default.Person, "Perfil")
+    PACIENTS(Icons.Outlined.Home, "Pacients"),
+    AGENDA(Icons.Outlined.DateRange, "Agenda"),
+    PERFIL(Icons.Outlined.Person, "Perfil")
 }
 
 @Composable
@@ -87,66 +102,47 @@ fun DoctorScreen(
     onLogout: () -> Unit,
     onPacientClick: (String) -> Unit
 ) {
+    val doctorViewModel: DoctorViewModel = viewModel()
     val appointmentViewModel: AppointmentViewModel = viewModel()
 
-    // Estat per saber quina pestanya tenim seleccionada (per defecte PACIENTS)
     var selectedTab by remember { mutableStateOf(DoctorTab.PACIENTS) }
+    var showAddPatientDialog by remember { mutableStateOf(false) }
 
-    // Estat per guardar la llista que ve del servidor
-    var llistaPacients by remember { mutableStateOf<List<Pacient>>(emptyList()) }
-    var errorServidor by remember { mutableStateOf<String?>(null) }
-
-    // --- CONNEXIÓ AL SERVIDOR ---
     LaunchedEffect(Unit) {
-        try {
-            val api = SingletonApp.getInstance().api
-            // Recuperem el token que hem guardat al login
-            val token = "Bearer ${SingletonApp.getInstance().userToken}"
-
-            val resposta = api.getPacients(token)
-
-            if (resposta.isSuccessful) {
-                llistaPacients = resposta.body() ?: emptyList()
-            } else {
-                errorServidor = "Error: ${resposta.code()}"
-            }
-
-            appointmentViewModel.loadAppointments()
-        } catch (e: Exception) {
-            errorServidor = "Error de connexió"
-            println(e.message)
-        }
+        doctorViewModel.loadPatients()
+        appointmentViewModel.loadAppointments()
     }
 
-    // Aquesta és l'estructura base de la pantalla
     Scaffold(
-        // 1. BARRA INFERIOR (NAVIGATION UI)
+        containerColor = BgLight,
         bottomBar = {
-            NavigationBar(containerColor = Color.White) {
-                DoctorTab.values().forEach { tab ->
-                    NavigationBarItem(
-                        icon = { Icon(tab.icon, contentDescription = tab.title) },
-                        label = { Text(tab.title) },
-                        selected = selectedTab == tab,
-                        onClick = { selectedTab = tab },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = Color(0xFF6200EE),
-                            indicatorColor = Color(0xFFE3F2FD)
-                        )
-                    )
+            DoctorBottomBar(
+                selectedTab = selectedTab,
+                onTabSelected = { selectedTab = it }
+            )
+        },
+        floatingActionButton = {
+            if (selectedTab == DoctorTab.PACIENTS) {
+                FloatingActionButton(
+                    onClick = { showAddPatientDialog = true },
+                    containerColor = PrimaryBlue,
+                    contentColor = Color.White,
+                    shape = CircleShape
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Add Patient")
                 }
             }
         }
     ) { paddingValues ->
-        // 2. CONTINGUT PRINCIPAL (Canvia segons la pestanya)
         Box(modifier = Modifier.padding(paddingValues).fillMaxSize()) {
             when (selectedTab) {
-                DoctorTab.PACIENTS -> PantallaLlistaPacients(llistaPacients,
-                    onPacientClick as (String) -> Unit
+                DoctorTab.PACIENTS -> PantallaLlistaPacients(
+                    totsElsPacients = doctorViewModel.state.patients,
+                    onPacientClick = onPacientClick
                 )
                 DoctorTab.AGENDA -> AgendaScreen(
                     state = appointmentViewModel.state,
-                    patients = llistaPacients,
+                    patients = doctorViewModel.state.patients,
                     onReload = { appointmentViewModel.loadAppointments() },
                     onCreate = { patientId, start, end, title, notes ->
                         appointmentViewModel.createAppointment(patientId, start, end, title, notes)
@@ -157,7 +153,95 @@ fun DoctorScreen(
             }
         }
     }
+    
+    // Feedback and Errors
+    if (doctorViewModel.state.error != null) {
+        AlertDialog(
+            onDismissRequest = { doctorViewModel.clearError() },
+            confirmButton = { 
+                TextButton(onClick = { doctorViewModel.clearError() }) { 
+                    Text("OK", color = PrimaryBlue) 
+                } 
+            },
+            title = { Text("Error") },
+            text = { Text(doctorViewModel.state.error ?: "Unknown error") },
+            containerColor = Color.White
+        )
+    }
+
+    if (showAddPatientDialog) {
+        AddPatientDialog(
+            onDismiss = { showAddPatientDialog = false },
+            onSubmit = { first, last, email, password, phone, dob ->
+                doctorViewModel.createPatient(first, last, email, password, phone, dob) {
+                    showAddPatientDialog = false
+                }
+            }
+        )
+    }
 }
+
+// --- BARRA DE NAVEGACIÓ PERSONALITZADA ---
+@Composable
+fun DoctorBottomBar(
+    selectedTab: DoctorTab,
+    onTabSelected: (DoctorTab) -> Unit
+) {
+    Surface(
+        color = Color.White,
+        shadowElevation = 10.dp,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Box {
+            // Línia gradient superior
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(3.dp)
+                    .align(Alignment.TopCenter)
+                    .background(Brush.horizontalGradient(listOf(PrimaryBlue, SecondaryGreen)))
+            )
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 10.dp),
+                horizontalArrangement = Arrangement.SpaceAround,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                DoctorTab.values().forEach { tab ->
+                    val isSelected = selectedTab == tab
+                    val color = if (isSelected) PrimaryBlue else Color.LightGray
+                    
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable { onTabSelected(tab) }
+                            .padding(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = tab.icon,
+                            contentDescription = tab.title,
+                            tint = color,
+                            modifier = Modifier.size(26.dp)
+                        )
+                        if (isSelected) {
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = tab.title,
+                                fontSize = 11.sp,
+                                color = color,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 // --- SUB-PANTALLA 1: LLISTA AMB BUSCADOR ---
 @Composable
@@ -165,44 +249,47 @@ fun PantallaLlistaPacients(
     totsElsPacients: List<Pacient>,
     onPacientClick: (String) -> Unit
 ) {
-    // Estat del text del buscador
     var textBuscador by remember { mutableStateOf("") }
 
-    // Lògica de filtratge (Busquem per nom)
     val pacientsFiltrats = if (textBuscador.isEmpty()) {
         totsElsPacients
     } else {
-        totsElsPacients.filter { it.email.contains(textBuscador, ignoreCase = true) }
+        totsElsPacients.filter { 
+            val fullName = "${it.firstName} ${it.lastName}"
+            fullName.contains(textBuscador, ignoreCase = true) || it.email.contains(textBuscador, ignoreCase = true)
+        }
     }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF5F5F5))
             .padding(16.dp)
     ) {
-        Text("Els teus Pacients", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6200EE))
+        Text("Pacients", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = TextDark)
         Spacer(modifier = Modifier.height(16.dp))
 
-        // EL BUSCADOR
         OutlinedTextField(
             value = textBuscador,
             onValueChange = { textBuscador = it },
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("Buscar per nom...") },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Buscar") },
+            placeholder = { Text("Buscar per nom o email...", color = TextGrey) },
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Buscar", tint = TextGrey) },
             singleLine = true,
+            shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedContainerColor = Color.White,
-                unfocusedContainerColor = Color.White
+                unfocusedContainerColor = Color.White,
+                focusedBorderColor = PrimaryBlue,
+                unfocusedBorderColor = Color.Transparent,
+                cursorColor = PrimaryBlue
             )
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // LA LLISTA (LazyColumn)
         LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(bottom = 80.dp)
         ) {
             items(pacientsFiltrats) { pacient ->
                 ItemPacientDisseny(pacient, onPacientClick)
@@ -211,54 +298,53 @@ fun PantallaLlistaPacients(
     }
 }
 
-// Disseny de la targeta individual
 @Composable
 fun ItemPacientDisseny(pacient: Pacient, onClick: (String) -> Unit) {
     Card(
-        elevation = CardDefaults.cardElevation(2.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        modifier = Modifier.fillMaxWidth().clickable { onClick(pacient.id) }
+        elevation = CardDefaults.cardElevation(0.dp), // Minimalista (flat)
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick(pacient.id) }
+            // Afegim una mica de vora subtil
+            .background(Color.White, RoundedCornerShape(12.dp))
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Cercle amb la inicial (opcional, queda maco)
             Surface(
-                modifier = Modifier.size(40.dp),
-                shape = MaterialTheme.shapes.medium,
-                color = Color(0xFFE3F2FD)
+                modifier = Modifier.size(42.dp),
+                shape = CircleShape,
+                color = PrimaryBlue.copy(alpha = 0.1f)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Text(
-                        text = pacient.email.first().toString().uppercase(),
+                        text = if (pacient.firstName.isNotEmpty()) pacient.firstName.take(1).uppercase() else "P",
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF1976D2)
+                        color = PrimaryBlue,
+                        fontSize = 16.sp
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(12.dp))
 
-            // Dades del Pacient
             Column(modifier = Modifier.weight(1f)) {
-                // Fem servir l'email com a nom principal
-                Text(text = pacient.email, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-
-                // Si tenim telèfon, el mostrem. Si no, text buit.
-                val telefon = pacient.phoneNumber ?: "Sense telèfon"
-                Text(text = telefon, color = Color.Gray, fontSize = 14.sp)
+                Text(
+                    text = "${pacient.firstName} ${pacient.lastName}", 
+                    fontWeight = FontWeight.SemiBold, 
+                    fontSize = 16.sp, 
+                    color = TextDark
+                )
+                Text(text = pacient.email, color = TextGrey, fontSize = 12.sp)
+                
+                val telefon = pacient.phoneNumber ?: ""
+                if (telefon.isNotEmpty()) {
+                    Text(text = telefon, color = TextGrey, fontSize = 12.sp)
+                }
             }
-
-            // --- AQUI ABANS HI HAVIA LA GRAVETAT ---
-            // Com que el servidor no ens la diu, de moment posem un indicador genèric
-            // o l'eliminem directament.
-            Text(
-                text = "Actiu", // Text fix provisional
-                color = Color(0xFF2E7D32), // Verd
-                fontWeight = FontWeight.Bold,
-                fontSize = 12.sp
-            )
         }
     }
 }
@@ -276,14 +362,15 @@ fun AgendaScreen(
     val dayFormatter = remember { DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(Locale.getDefault()) }
     val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm") }
     val now = remember { LocalDateTime.now().withSecond(0).withNano(0) }
-    val appointmentViewModel: AppointmentViewModel = viewModel()
+    
+    val appointmentViewModel: AppointmentViewModel = viewModel() // Per netejar errors/feedback
 
     var showSheet by remember { mutableStateOf(false) }
     var draftPatient by remember { mutableStateOf(patients.firstOrNull()?.id.orEmpty()) }
-    var draftTitle by remember { mutableStateOf("Follow-up") }
+    var draftTitle by remember { mutableStateOf("Visita seguiment") }
     var draftNotes by remember { mutableStateOf("") }
     var draftStart by remember { mutableStateOf(now) }
-    var draftDurationMinutes by remember { mutableStateOf("30") }
+    var draftDurationMinutes by remember { mutableStateOf(30) } // Int per al stepper
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     LaunchedEffect(patients) {
@@ -293,12 +380,13 @@ fun AgendaScreen(
     }
 
     Scaffold(
+        containerColor = BgLight,
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = { showSheet = true },
                 icon = { Icon(Icons.Default.EditCalendar, contentDescription = null) },
-                text = { Text("Add") },
-                containerColor = Color(0xFF0F9D58),
+                text = { Text("Nova Cita") },
+                containerColor = SecondaryGreen,
                 contentColor = Color.White
             )
         }
@@ -307,47 +395,45 @@ fun AgendaScreen(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
-                .background(Color(0xFFF7F7F9))
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column {
-                    Text("Agenda", fontWeight = FontWeight.Bold, fontSize = 26.sp)
-                    Text(
-                        text = "Lightweight calendar overview",
-                        color = Color.Gray,
-                        fontSize = 13.sp
-                    )
-                }
+                Text("Agenda", fontWeight = FontWeight.Bold, fontSize = 28.sp, color = TextDark)
                 IconButton(onClick = onReload) {
-                    Icon(Icons.Default.Refresh, contentDescription = "Refresh agenda", tint = MaterialTheme.colorScheme.primary)
+                    Icon(Icons.Default.Refresh, contentDescription = "Refrescar", tint = PrimaryBlue)
                 }
             }
+            
+            Spacer(modifier = Modifier.height(16.dp))
 
             if (state.isLoading && state.appointments.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
+                    CircularProgressIndicator(color = PrimaryBlue)
                 }
             } else if (state.appointments.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No appointments yet. Tap Add to create.", color = Color.Gray)
+                    Text("Sense cites programades.", color = TextGrey)
                 }
             } else {
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(bottom = 80.dp)
+                ) {
                     state.appointments
                         .sortedBy { it.startTime }
                         .groupBy { runCatching { LocalDateTime.parse(it.startTime).toLocalDate() }.getOrNull() }
                         .forEach { (day, itemsForDay) ->
                             item(key = "header-$day") {
                                 Text(
-                                    text = day?.let { dayFormatter.format(it) } ?: "Unknown date",
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = Color(0xFF5F6368)
+                                    text = day?.let { dayFormatter.format(it) } ?: "Data desconeguda",
+                                    fontWeight = FontWeight.Bold,
+                                    color = TextGrey,
+                                    fontSize = 13.sp,
+                                    modifier = Modifier.padding(vertical = 4.dp)
                                 )
                             }
                             items(itemsForDay) { appointment ->
@@ -361,26 +447,14 @@ fun AgendaScreen(
                 }
             }
 
-            state.error?.let { /* handled via dialog below */ }
             state.feedback?.let {
-                Text(text = it, color = Color(0xFF2E7D32), fontSize = 13.sp)
+                // Toast manual o feedback visual
                 LaunchedEffect(it) {
-                    kotlinx.coroutines.delay(1500)
+                    delay(2000)
                     appointmentViewModel.clearFeedback()
                 }
             }
         }
-    }
-
-    state.error?.let { message ->
-        AlertDialog(
-            onDismissRequest = { appointmentViewModel.clearError() },
-            confirmButton = {
-                TextButton(onClick = { appointmentViewModel.clearError() }) { Text("OK") }
-            },
-            title = { Text("Cannot create appointment") },
-            text = { Text(message.ifBlank { "Time slot unavailable or schedule is full." }) }
-        )
     }
 
     if (showSheet) {
@@ -399,8 +473,7 @@ fun AgendaScreen(
             onDismiss = { showSheet = false },
             onSubmit = {
                 if (draftPatient.isNotEmpty()) {
-                    val duration = draftDurationMinutes.toLongOrNull() ?: 30L
-                    val end = draftStart.plusMinutes(duration)
+                    val end = draftStart.plusMinutes(draftDurationMinutes.toLong())
                     onCreate(draftPatient, draftStart, end, draftTitle, draftNotes.ifBlank { null })
                     showSheet = false
                     draftNotes = ""
@@ -419,28 +492,50 @@ private fun AppointmentCard(
 ) {
     val start = runCatching { LocalDateTime.parse(appointment.startTime) }.getOrNull()
     val end = runCatching { LocalDateTime.parse(appointment.endTime) }.getOrNull()
-    val timeLabel = if (start != null && end != null) {
-        "${timeFormatter.format(start)} - ${timeFormatter.format(end)}"
-    } else {
-        "${appointment.startTime} → ${appointment.endTime}"
-    }
+    
+    val startTimeStr = start?.let { timeFormatter.format(it) } ?: "--:--"
+    val endTimeStr = end?.let { timeFormatter.format(it) } ?: "--:--"
 
     Card(
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(2.dp)
+        elevation = CardDefaults.cardElevation(0.dp),
+        shape = RoundedCornerShape(12.dp),
+        modifier = Modifier.fillMaxWidth()
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            modifier = Modifier
+                .padding(12.dp) // Més compacte
+                .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(appointment.title, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
-                Text(timeLabel, color = Color.Gray, fontSize = 13.sp)
-                appointment.patientName?.let { Text(it, color = Color(0xFF1976D2), fontSize = 13.sp) }
-                appointment.status?.let { Text(it, color = Color.Gray, fontSize = 12.sp) }
+            // Columna d'Hora (esquerra)
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .background(BgLight, RoundedCornerShape(8.dp))
+                    .padding(8.dp)
+            ) {
+                Text(startTimeStr, fontWeight = FontWeight.Bold, color = TextDark, fontSize = 14.sp)
+                Text(endTimeStr, color = TextGrey, fontSize = 12.sp)
             }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            // Informació central
+            Column(modifier = Modifier.weight(1f)) {
+                Text(appointment.title, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = TextDark)
+                appointment.patientName?.let { 
+                    Text(it, color = PrimaryBlue, fontSize = 13.sp) 
+                }
+            }
+            
             IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, contentDescription = "Delete appointment", tint = Color(0xFFB3261E))
+                Icon(
+                    Icons.Default.Delete, 
+                    contentDescription = "Esborrar", 
+                    tint = Color(0xFFFF5252).copy(alpha = 0.8f),
+                    modifier = Modifier.size(20.dp)
+                )
             }
         }
     }
@@ -457,9 +552,9 @@ private fun AppointmentSheet(
     notes: String,
     onNotesChange: (String) -> Unit,
     startTime: LocalDateTime,
-    durationMinutes: String,
+    durationMinutes: Int,
     onStartChange: (LocalDateTime) -> Unit,
-    onDurationChange: (String) -> Unit,
+    onDurationChange: (Int) -> Unit,
     onDismiss: () -> Unit,
     onSubmit: () -> Unit,
     sheetState: SheetState
@@ -467,8 +562,10 @@ private fun AppointmentSheet(
     val dateFormatter = remember { DateTimeFormatter.ofPattern("EEE, dd MMM") }
     val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm") }
     var patientMenuExpanded by remember { mutableStateOf(false) }
+    
     var showStartDatePicker by remember { mutableStateOf(false) }
     var showStartTimePicker by remember { mutableStateOf(false) }
+    
     val startDateState = rememberDatePickerState(
         initialSelectedDateMillis = startTime.toEpochMillis()
     )
@@ -492,89 +589,142 @@ private fun AppointmentSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(horizontal = 24.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text("New appointment", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+            Text("Nova Cita", fontWeight = FontWeight.Bold, fontSize = 22.sp, color = TextDark)
 
-            if (patients.isNotEmpty()) {
-                Box {
-                    OutlinedTextField(
-                        value = patients.find { it.id == selectedPatient }?.email ?: "Select patient",
-                        onValueChange = {},
-                        readOnly = true,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { patientMenuExpanded = true },
-                        label = { Text("Patient") },
-                        trailingIcon = { Icon(Icons.Default.ArrowDropDown, contentDescription = null) }
+            // Selector de pacient
+            Box {
+                OutlinedTextField(
+                    value = patients.find { it.id == selectedPatient }?.email ?: "Selecciona pacient",
+                    onValueChange = {},
+                    readOnly = true,
+                    modifier = Modifier.fillMaxWidth().clickable { patientMenuExpanded = true },
+                    label = { Text("Pacient") },
+                    trailingIcon = { Icon(Icons.Default.ArrowDropDown, contentDescription = null) },
+                    enabled = false, // Per fer el clic al Box, no al TextField
+                    colors = OutlinedTextFieldDefaults.colors(
+                        disabledTextColor = TextDark,
+                        disabledBorderColor = Color.LightGray,
+                        disabledLabelColor = TextGrey,
+                        disabledTrailingIconColor = TextGrey
                     )
-                    DropdownMenu(
-                        expanded = patientMenuExpanded,
-                        onDismissRequest = { patientMenuExpanded = false }
-                    ) {
-                        patients.forEach { pacient ->
-                            DropdownMenuItem(
-                                text = { Text(pacient.email) },
-                                onClick = {
-                                    onPatientChange(pacient.id)
-                                    patientMenuExpanded = false
-                                }
-                            )
-                        }
+                )
+                // Overlay invisible per capturar el clic
+                Box(modifier = Modifier.matchParentSize().clickable { patientMenuExpanded = true })
+                
+                DropdownMenu(
+                    expanded = patientMenuExpanded,
+                    onDismissRequest = { patientMenuExpanded = false }
+                ) {
+                    patients.forEach { pacient ->
+                        DropdownMenuItem(
+                            text = { Text(pacient.email) },
+                            onClick = {
+                                onPatientChange(pacient.id)
+                                patientMenuExpanded = false
+                            }
+                        )
                     }
                 }
-            } else {
-                Text("No patients loaded", color = Color.Gray, fontSize = 12.sp)
             }
 
             OutlinedTextField(
                 value = title,
                 onValueChange = onTitleChange,
-                label = { Text("Title") },
+                label = { Text("Títol") },
                 modifier = Modifier.fillMaxWidth()
             )
+
+            // Data i Hora en una fila
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Box(modifier = Modifier.weight(1f).clickable { showStartDatePicker = true }) {
+                    OutlinedTextField(
+                        value = dateFormatter.format(startTime),
+                        onValueChange = {},
+                        label = { Text("Dia") },
+                        readOnly = true,
+                        enabled = false,
+                        leadingIcon = { Icon(Icons.Default.DateRange, null) },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            disabledTextColor = TextDark, disabledBorderColor = Color.LightGray, disabledLabelColor = TextGrey, disabledLeadingIconColor = PrimaryBlue
+                        )
+                    )
+                }
+                Box(modifier = Modifier.weight(1f).clickable { showStartTimePicker = true }) {
+                    OutlinedTextField(
+                        value = timeFormatter.format(startTime),
+                        onValueChange = {},
+                        label = { Text("Hora") },
+                        readOnly = true,
+                        enabled = false,
+                        leadingIcon = { Icon(Icons.Default.Schedule, null) },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            disabledTextColor = TextDark, disabledBorderColor = Color.LightGray, disabledLabelColor = TextGrey, disabledLeadingIconColor = PrimaryBlue
+                        )
+                    )
+                }
+            }
+
+            // DURADA (Stepper)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth().background(BgLight, RoundedCornerShape(8.dp)).padding(12.dp)
+            ) {
+                Text("Durada (min)", color = TextGrey, fontWeight = FontWeight.Medium)
+                
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(
+                        onClick = { if (durationMinutes > 15) onDurationChange(durationMinutes - 15) },
+                        modifier = Modifier.size(32.dp).background(Color.White, CircleShape)
+                    ) {
+                        Icon(Icons.Default.Remove, null, tint = PrimaryBlue)
+                    }
+                    
+                    Text(
+                        text = "$durationMinutes",
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp,
+                        color = TextDark
+                    )
+                    
+                    IconButton(
+                        onClick = { onDurationChange(durationMinutes + 15) },
+                        modifier = Modifier.size(32.dp).background(Color.White, CircleShape)
+                    ) {
+                        Icon(Icons.Default.Add, null, tint = PrimaryBlue)
+                    }
+                }
+            }
+
             OutlinedTextField(
                 value = notes,
                 onValueChange = onNotesChange,
-                label = { Text("Notes (optional)") },
-                modifier = Modifier.fillMaxWidth()
+                label = { Text("Notes (opcional)") },
+                modifier = Modifier.fillMaxWidth(),
+                maxLines = 3
             )
 
-            DateTimeRow(
-                label = "Start",
-                dateLabel = dateFormatter.format(startTime),
-                timeLabel = timeFormatter.format(startTime),
-                onDateClick = { showStartDatePicker = true },
-                onTimeClick = { showStartTimePicker = true }
-            )
-            OutlinedTextField(
-                value = durationMinutes,
-                onValueChange = onDurationChange,
-                label = { Text("Duration (minutes)") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            ExtendedFloatingActionButton(
+            Button(
                 onClick = onSubmit,
-                containerColor = Color(0xFF0F9D58),
-                contentColor = Color.White,
-                modifier = Modifier.fillMaxWidth()
+                colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
+                modifier = Modifier.fillMaxWidth().height(50.dp),
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Icon(Icons.Default.EditCalendar, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text("Save")
+                Text("Guardar Cita", fontSize = 16.sp)
             }
+            
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 
     if (showStartDatePicker) {
         DatePickerDialog(
-            colors = DatePickerDefaults.colors(
-                containerColor = MaterialTheme.colorScheme.surface,
-                selectedDayContainerColor = MaterialTheme.colorScheme.primary,
-                selectedDayContentColor = MaterialTheme.colorScheme.onPrimary
-            ),
             onDismissRequest = { showStartDatePicker = false },
             confirmButton = {
                 TextButton(onClick = {
@@ -583,7 +733,7 @@ private fun AppointmentSheet(
                         onStartChange(startTime.withDate(date))
                     }
                     showStartDatePicker = false
-                }) { Text("OK") }
+                }) { Text("OK", color = PrimaryBlue) }
             },
             dismissButton = { TextButton(onClick = { showStartDatePicker = false }) { Text("Cancel") } }
         ) {
@@ -601,43 +751,132 @@ private fun AppointmentSheet(
                 showStartTimePicker = false
             }
         ) {
-            TimePicker(state = startTimeState, colors = TimePickerDefaults.colors(
-                containerColor = MaterialTheme.colorScheme.surface,
-                selectorColor = MaterialTheme.colorScheme.primary,
-                timeSelectorSelectedContentColor = MaterialTheme.colorScheme.onPrimary
-            ))
+            TimePicker(state = startTimeState)
         }
     }
 }
 
-// --- SUB-PANTALLES SIMPLES (Agenda i Perfil) ---
-
-@Composable
-private fun DateTimeRow(
-    label: String,
-    dateLabel: String,
-    timeLabel: String,
-    onDateClick: () -> Unit,
-    onTimeClick: () -> Unit
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(label, fontWeight = FontWeight.SemiBold)
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            TextButton(onClick = onDateClick) {
-                Icon(Icons.Default.DateRange, contentDescription = null)
-                Spacer(Modifier.width(6.dp))
-                Text(dateLabel)
-            }
-            TextButton(onClick = onTimeClick) {
-                Icon(Icons.Default.Schedule, contentDescription = null)
-                Spacer(Modifier.width(6.dp))
-                Text(timeLabel)
-            }
-        }
-    }
-}
-
+// --- PANTALLA ADD PATIENT DIALOG ---
 @OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AddPatientDialog(
+    onDismiss: () -> Unit,
+    onSubmit: (String, String, String, String, String, String) -> Unit
+) {
+    var firstName by remember { mutableStateOf("") }
+    var lastName by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf("") }
+    var dob by remember { mutableStateOf(LocalDate.now().minusYears(30)) }
+    var showDatePicker by remember { mutableStateOf(false) }
+
+    val dateState = rememberDatePickerState(
+        initialSelectedDateMillis = dob.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+    )
+
+    AlertDialog(
+        containerColor = Color.White,
+        onDismissRequest = onDismiss,
+        title = { Text("Nou Pacient", fontWeight = FontWeight.Bold, color = TextDark) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = firstName, onValueChange = { firstName = it }, label = { Text("Nom") },
+                        singleLine = true, modifier = Modifier.weight(1f),
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PrimaryBlue, focusedLabelColor = PrimaryBlue)
+                    )
+                    OutlinedTextField(
+                        value = lastName, onValueChange = { lastName = it }, label = { Text("Cognom") },
+                        singleLine = true, modifier = Modifier.weight(1f),
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PrimaryBlue, focusedLabelColor = PrimaryBlue)
+                    )
+                }
+                OutlinedTextField(
+                    value = email, 
+                    onValueChange = { email = it }, 
+                    label = { Text("Email") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = PrimaryBlue, focusedLabelColor = PrimaryBlue
+                    )
+                )
+                OutlinedTextField(
+                    value = password, 
+                    onValueChange = { password = it }, 
+                    label = { Text("Password") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = PrimaryBlue, focusedLabelColor = PrimaryBlue
+                    )
+                )
+                OutlinedTextField(
+                    value = phone, 
+                    onValueChange = { phone = it }, 
+                    label = { Text("Telèfon") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = PrimaryBlue, focusedLabelColor = PrimaryBlue
+                    )
+                )
+                
+                Box(modifier = Modifier.fillMaxWidth().clickable { showDatePicker = true }) {
+                    OutlinedTextField(
+                        value = dob.format(DateTimeFormatter.ISO_LOCAL_DATE),
+                        onValueChange = {},
+                        label = { Text("Data Naixement") },
+                        readOnly = true,
+                        enabled = false,
+                        trailingIcon = {
+                            Icon(Icons.Default.DateRange, contentDescription = null, tint = PrimaryBlue)
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            disabledTextColor = TextDark, disabledBorderColor = Color.LightGray, disabledLabelColor = TextGrey
+                        )
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onSubmit(firstName, lastName, email, password, phone, dob.format(DateTimeFormatter.ISO_LOCAL_DATE)) },
+                colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
+            ) {
+                Text("Crear")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel·lar", color = TextGrey)
+            }
+        }
+    )
+
+    if (showDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    dateState.selectedDateMillis?.let { millis ->
+                        dob = Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate()
+                    }
+                    showDatePicker = false
+                }) { Text("OK", color = PrimaryBlue) }
+            },
+            dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text("Cancel") } }
+        ) {
+            DatePicker(state = dateState)
+        }
+    }
+}
+
+
+// --- UTILITATS DATA ---
 @Composable
 private fun TimePickerDialog(
     onDismissRequest: () -> Unit,
@@ -645,9 +884,10 @@ private fun TimePickerDialog(
     content: @Composable () -> Unit
 ) {
     AlertDialog(
+        containerColor = Color.White,
         onDismissRequest = onDismissRequest,
-        confirmButton = { TextButton(onClick = onConfirm) { Text("OK") } },
-        dismissButton = { TextButton(onClick = onDismissRequest) { Text("Cancel") } },
+        confirmButton = { TextButton(onClick = onConfirm) { Text("OK", color = PrimaryBlue) } },
+        dismissButton = { TextButton(onClick = onDismissRequest) { Text("Cancel", color = TextGrey) } },
         text = { content() }
     )
 }
@@ -663,22 +903,48 @@ private fun LocalDateTime.withDate(date: LocalDate): LocalDateTime =
 
 @Composable
 fun PantallaPerfilDoctor(onLogout: () -> Unit) {
+    val doctor = SingletonApp.getInstance().doctorActual
+    
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Perfil del Doctor", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+        Surface(
+            modifier = Modifier.size(100.dp),
+            shape = CircleShape,
+            color = PrimaryBlue.copy(alpha = 0.1f)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Text(
+                    text = doctor?.firstName?.take(1)?.uppercase() ?: "D",
+                    fontSize = 40.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = PrimaryBlue
+                )
+            }
+        }
         Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = onLogout, colors = ButtonDefaults.buttonColors(containerColor = Color.Red)) {
+        
+        Text(
+            text = "${doctor?.firstName ?: "Doctor"} ${doctor?.lastName ?: ""}", 
+            fontSize = 24.sp, 
+            fontWeight = FontWeight.Bold, 
+            color = TextDark
+        )
+        Text(
+            text = doctor?.email ?: "", 
+            fontSize = 14.sp, 
+            color = TextGrey
+        )
+        
+        Spacer(modifier = Modifier.height(32.dp))
+        Button(
+            onClick = onLogout, 
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF5252).copy(alpha = 0.9f)),
+            modifier = Modifier.fillMaxWidth(0.6f)
+        ) {
             Text("Tancar Sessió")
         }
-    }
-}
-
-@Composable
-fun PantallaPlaceholder(titol: String) {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(titol, fontSize = 20.sp, color = Color.Gray)
     }
 }

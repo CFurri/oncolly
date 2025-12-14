@@ -41,6 +41,8 @@ fun ProfileScreen(
     // 1. Dades del Singleton (Estat inicial)
     val app = SingletonApp.getInstance()
     // 2. Estats locals per editar (això és el que canvia l'usuari en pantalla)
+    var firstName by remember { mutableStateOf(app.pacientActual?.firstName ?: "") }
+    var lastName by remember { mutableStateOf(app.pacientActual?.lastName ?: "") }
     var email by remember { mutableStateOf(app.pacientActual?.email ?: "") }
     var telefon by remember { mutableStateOf(app.pacientActual?.phoneNumber ?: "") }
     var dataNaixement by remember { mutableStateOf(app.pacientActual?.dateOfBirth ?: "") }
@@ -59,6 +61,8 @@ fun ProfileScreen(
                 val dadesFresques = response.body()!!
 
                 // Actualitzem les variables de la pantalla
+                firstName = dadesFresques.firstName
+                lastName = dadesFresques.lastName
                 email = dadesFresques.email
                 telefon = dadesFresques.phoneNumber ?: ""
                 dataNaixement = dadesFresques.dateOfBirth ?: ""
@@ -146,7 +150,12 @@ fun ProfileScreen(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier.fillMaxSize().background(PrimaryBlue.copy(alpha = 0.1f))
                     ) {
-                        Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.size(60.dp), tint = PrimaryBlue)
+                        Text(
+                            text = if (firstName.isNotEmpty()) firstName.first().toString().uppercase() else "P",
+                            fontSize = 40.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = PrimaryBlue
+                        )
                     }
                 }
 
@@ -161,7 +170,24 @@ fun ProfileScreen(
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
 
-                        // Si estem editant -> TextField. Si no -> Text normal
+                        EditableProfileItem(
+                            isEditing = isEditing,
+                            icon = Icons.Default.Person,
+                            label = "Nom",
+                            value = firstName,
+                            onValueChange = { firstName = it }
+                        )
+                        Divider(color = Color.Gray.copy(alpha = 0.1f), modifier = Modifier.padding(vertical = 8.dp))
+
+                        EditableProfileItem(
+                            isEditing = isEditing,
+                            icon = Icons.Default.Person,
+                            label = "Cognom",
+                            value = lastName,
+                            onValueChange = { lastName = it }
+                        )
+                        Divider(color = Color.Gray.copy(alpha = 0.1f), modifier = Modifier.padding(vertical = 8.dp))
+
                         EditableProfileItem(
                             isEditing = isEditing,
                             icon = Icons.Default.Email,

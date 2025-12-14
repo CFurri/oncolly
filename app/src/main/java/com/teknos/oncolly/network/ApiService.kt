@@ -2,6 +2,7 @@ package com.teknos.oncolly.network
 
 import com.teknos.oncolly.entity.Activity
 import com.teknos.oncolly.entity.CreateActivityRequest
+import com.teknos.oncolly.entity.CreatePatientRequest
 import com.teknos.oncolly.entity.Pacient
 import com.teknos.oncolly.entity.Appointment
 import com.teknos.oncolly.entity.CreateAppointmentRequest
@@ -23,6 +24,12 @@ interface ApiService {
     suspend fun getPacients(
         @Header("Authorization") token: String
     ): Response<List<Pacient>>
+
+    @POST("api/patients")
+    suspend fun createPatient(
+        @Header("Authorization") token: String,
+        @Body request: CreatePatientRequest
+    ): Response<Void>
 
     // --- GUARDAR ACTIVITATS (Pacient activitats)---
     @POST("api/activities")
@@ -68,7 +75,8 @@ interface ApiService {
         @Header("Authorization") token: String
     ): Response<Pacient>
 
-    // Per obtenir les dades del doctor i omplir el Singleton ---@GET("api/doctors/{id}")
+    // Per obtenir les dades del doctor i omplir el Singleton
+    @GET("api/doctors/{id}")
     suspend fun getDoctorProfile(
         @Header("Authorization") token: String,
         @Path("id") id: String

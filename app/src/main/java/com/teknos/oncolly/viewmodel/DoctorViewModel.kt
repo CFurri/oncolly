@@ -104,6 +104,23 @@ class DoctorViewModel : ViewModel() {
         }
     }
 
+    fun deletePatient(id: String) {
+        viewModelScope.launch {
+            try {
+                val app = SingletonApp.getInstance()
+                val token = "Bearer ${app.userToken}"
+                val response = app.api.deletePatient(token, id)
+                if (response.isSuccessful) {
+                    loadPatients() // Reload list
+                } else {
+                    state = state.copy(error = "Delete failed: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                state = state.copy(error = "Delete error: ${e.message}")
+            }
+        }
+    }
+
     fun clearError() {
         state = state.copy(error = null)
     }

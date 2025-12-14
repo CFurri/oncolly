@@ -27,8 +27,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.teknos.oncolly.entity.UpdatePatientRequest
 import com.teknos.oncolly.singletons.SingletonApp
-
+import kotlinx.coroutines.launch
 
 private val BackgroundRed = Color(0xFFFFEBEE)
 
@@ -50,6 +51,9 @@ fun ProfileScreen(
     var isLoading by remember { mutableStateOf(true) }
     // 3. Mode Edició: Controla si estem mirant o escrivint
     var isEditing by remember { mutableStateOf(false) }
+    
+    val scope = rememberCoroutineScope()
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     LaunchedEffect(Unit) {
         try {
@@ -95,11 +99,29 @@ fun ProfileScreen(
             FloatingActionButton(
                 onClick = {
                     if (isEditing) {
-                        // --- AQUÍ ÉS ON GUARDARÍEM AL SERVIDOR ---
-                        // TODO: Cridar api.updatePatient(...)
-
-                        // Per ara, simulem que es guarda i tornem a mode lectura
-                        isEditing = false
+                        scope.launch {
+                            try {
+                                val token = "Bearer ${app.userToken}"
+                                val req = UpdatePatientRequest(firstName, lastName, email, telefon, dataNaixement)
+                                val resp = app.api.updatePatientProfile(token, req)
+                                if (resp.isSuccessful) {
+                                    isEditing = false
+                                    // Update Singleton
+                                    app.pacientActual = app.pacientActual?.copy(
+                                        firstName = firstName,
+                                        lastName = lastName,
+                                        email = email,
+                                        phoneNumber = telefon,
+                                        dateOfBirth = dataNaixement
+                                    )
+                                    android.widget.Toast.makeText(context, "Perfil actualitzat", android.widget.Toast.LENGTH_SHORT).show()
+                                } else {
+                                    android.widget.Toast.makeText(context, "Error: ${resp.code()}", android.widget.Toast.LENGTH_SHORT).show()
+                                }
+                            } catch(e: Exception) {
+                                android.widget.Toast.makeText(context, "Error connexió", android.widget.Toast.LENGTH_SHORT).show()
+                            }
+                        }
                     } else {
                         // Entrem en mode edició
                         isEditing = true
@@ -177,7 +199,7 @@ fun ProfileScreen(
                             value = firstName,
                             onValueChange = { firstName = it }
                         )
-                        Divider(color = Color.Gray.copy(alpha = 0.1f), modifier = Modifier.padding(vertical = 8.dp))
+                        HorizontalDivider(color = Color.Gray.copy(alpha = 0.1f), modifier = Modifier.padding(vertical = 8.dp))
 
                         EditableProfileItem(
                             isEditing = isEditing,
@@ -186,7 +208,7 @@ fun ProfileScreen(
                             value = lastName,
                             onValueChange = { lastName = it }
                         )
-                        Divider(color = Color.Gray.copy(alpha = 0.1f), modifier = Modifier.padding(vertical = 8.dp))
+                        HorizontalDivider(color = Color.Gray.copy(alpha = 0.1f), modifier = Modifier.padding(vertical = 8.dp))
 
                         EditableProfileItem(
                             isEditing = isEditing,
@@ -195,7 +217,7 @@ fun ProfileScreen(
                             value = email,
                             onValueChange = { email = it }
                         )
-                        Divider(color = Color.Gray.copy(alpha = 0.1f), modifier = Modifier.padding(vertical = 8.dp))
+                        HorizontalDivider(color = Color.Gray.copy(alpha = 0.1f), modifier = Modifier.padding(vertical = 8.dp))
 
                         EditableProfileItem(
                             isEditing = isEditing,
@@ -205,7 +227,7 @@ fun ProfileScreen(
                             onValueChange = { telefon = it },
                             keyboardType = KeyboardType.Phone
                         )
-                        Divider(color = Color.Gray.copy(alpha = 0.1f), modifier = Modifier.padding(vertical = 8.dp))
+                        HorizontalDivider(color = Color.Gray.copy(alpha = 0.1f), modifier = Modifier.padding(vertical = 8.dp))
 
                         EditableProfileItem(
                             isEditing = isEditing,

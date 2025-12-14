@@ -99,14 +99,19 @@ fun DoctorScreen(
             AnimatedContent(
                 targetState = selectedTab,
                 transitionSpec = {
-                    fadeIn() + slideInHorizontally(initialOffsetX = { it }) togetherWith fadeOut() + slideOutHorizontally(targetOffsetX = { -it })
+                    if (targetState.ordinal > initialState.ordinal) {
+                        slideInHorizontally { it } togetherWith slideOutHorizontally { -it }
+                    } else {
+                        slideInHorizontally { -it } togetherWith slideOutHorizontally { it }
+                    }
                 },
                 label = "DoctorTabs"
             ) { tab ->
                 when (tab) {
                     DoctorTab.PACIENTS -> PantallaLlistaPacients(
                         totsElsPacients = doctorViewModel.state.patients,
-                        onPacientClick = onPacientClick
+                        onPacientClick = onPacientClick,
+                        onDeletePacient = { id -> doctorViewModel.deletePatient(id) }
                     )
                     DoctorTab.AGENDA -> AgendaScreen(
                         state = appointmentViewModel.state,
@@ -217,7 +222,8 @@ fun DoctorBottomBar(
 @Composable
 fun PantallaLlistaPacients(
     totsElsPacients: List<Pacient>,
-    onPacientClick: (String) -> Unit
+    onPacientClick: (String) -> Unit,
+    onDeletePacient: (String) -> Unit
 ) {
     var textBuscador by remember { mutableStateOf("") }
 
@@ -262,21 +268,24 @@ fun PantallaLlistaPacients(
             contentPadding = PaddingValues(bottom = 80.dp)
         ) {
             items(pacientsFiltrats) { pacient ->
-                ItemPacientDisseny(pacient, onPacientClick)
+                ItemPacientDisseny(pacient, onPacientClick, onDeletePacient)
             }
         }
     }
 }
 
 @Composable
-fun ItemPacientDisseny(pacient: Pacient, onClick: (String) -> Unit) {
+fun ItemPacientDisseny(pacient: Pacient, onClick: (String) -> Unit, onDelete: (String) -> Unit) {
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+
     Card(
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(0.dp),
+        elevation = CardDefaults.cardElevation(0.dp), // Minimalista (flat)
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick(pacient.id) }
+            // Afegim una mica de vora subtil
             .background(Color.White, RoundedCornerShape(12.dp))
     ) {
         Row(
@@ -309,7 +318,29 @@ fun ItemPacientDisseny(pacient: Pacient, onClick: (String) -> Unit) {
                 )
                 Text(text = pacient.email, color = TextGrey, fontSize = 12.sp)
             }
+
+            IconButton(onClick = { showDeleteConfirm = true }) {
+                Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = Color.Gray)
+            }
         }
+    }
+
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text("Eliminar Pacient") },
+            text = { Text("Estàs segur que vols eliminar a ${pacient.firstName}?") },
+            confirmButton = {
+                TextButton(onClick = { 
+                    onDelete(pacient.id)
+                    showDeleteConfirm = false
+                }) { Text("Eliminar", color = Color.Red) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancel·lar") }
+            },
+            containerColor = Color.White
+        )
     }
 }
 

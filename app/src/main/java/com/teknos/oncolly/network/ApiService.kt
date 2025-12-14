@@ -31,6 +31,18 @@ interface ApiService {
         @Body request: CreatePatientRequest
     ): Response<Void>
 
+    @DELETE("api/patients/{patientId}")
+    suspend fun deletePatient(
+        @Header("Authorization") token: String,
+        @Path("patientId") patientId: String
+    ): Response<Void>
+
+    @retrofit2.http.PUT("api/patients/profile")
+    suspend fun updatePatientProfile(
+        @Header("Authorization") token: String,
+        @Body request: com.teknos.oncolly.entity.UpdatePatientRequest
+    ): Response<Void>
+
     // --- GUARDAR ACTIVITATS (Pacient activitats)---
     @POST("api/activities")
     suspend fun createActivity(

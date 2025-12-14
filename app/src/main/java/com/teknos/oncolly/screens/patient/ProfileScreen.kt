@@ -39,15 +39,39 @@ fun ProfileScreen(
     onNavigateToActivities: () -> Unit
 ) {
     // 1. Dades del Singleton (Estat inicial)
-    val pacient = SingletonApp.getInstance().pacientActual
-
+    val app = SingletonApp.getInstance()
     // 2. Estats locals per editar (això és el que canvia l'usuari en pantalla)
-    var email by remember { mutableStateOf(pacient?.email ?: "") }
-    var telefon by remember { mutableStateOf(pacient?.phoneNumber ?: "") }
-    var dataNaixement by remember { mutableStateOf(pacient?.dateOfBirth ?: "") }
+    var email by remember { mutableStateOf(app.pacientActual?.email ?: "") }
+    var telefon by remember { mutableStateOf(app.pacientActual?.phoneNumber ?: "") }
+    var dataNaixement by remember { mutableStateOf(app.pacientActual?.dateOfBirth ?: "") }
 
+    var isLoading by remember { mutableStateOf(true) }
     // 3. Mode Edició: Controla si estem mirant o escrivint
     var isEditing by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        try {
+            // Cridem al NOU endpoint que no necessita ID
+            val token = "Bearer ${app.userToken}"
+            val response = app.api.getPacientProfile(token)
+
+            if (response.isSuccessful && response.body() != null) {
+                val dadesFresques = response.body()!!
+
+                // Actualitzem les variables de la pantalla
+                email = dadesFresques.email
+                telefon = dadesFresques.phoneNumber ?: ""
+                dataNaixement = dadesFresques.dateOfBirth ?: ""
+
+                // També actualitzem el Singleton per si de cas
+                app.pacientActual = dadesFresques
+            }
+        } catch (e: Exception) {
+            // Gestionar error si cal (ex: sense internet)
+        } finally {
+            isLoading = false
+        }
+    }
 
     val backgroundBrush = Brush.verticalGradient(
         colors = listOf(Color.White, PrimaryBlue.copy(alpha = 0.15f))

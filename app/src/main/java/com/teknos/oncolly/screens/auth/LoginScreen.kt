@@ -212,16 +212,9 @@ fun LoginScreen(onLoginSuccess: (String) -> Unit) {
 
                                     try {
                                         if (body.role.equals("PACIENT", ignoreCase = true)) {
-                                            val respPacient = api.getPacientProfile(tokenAmbBearer, body.userId)
+                                            val respPacient = api.getPacientProfile(tokenAmbBearer)
                                             if (respPacient.isSuccessful) {
                                                 app.pacientActual = respPacient.body()
-                                            } else {
-                                                app.pacientActual = Pacient(
-                                                    id = body.userId,
-                                                    email = email,
-                                                    phoneNumber = "666777888",
-                                                    dateOfBirth = "01/01/1990"
-                                                )
                                             }
                                         } else if (body.role.equals("DOCTOR", ignoreCase = true)) {
                                             val respDoctor = api.getDoctorProfile(tokenAmbBearer, body.userId)

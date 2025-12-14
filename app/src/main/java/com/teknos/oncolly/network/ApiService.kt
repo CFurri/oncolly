@@ -62,11 +62,10 @@ interface ApiService {
         @Path("appointmentId") appointmentId: String
     ): Response<Void>
 
-    // Per obtenir les dades del pacient actual (necessari per omplir el Singleton)
-    @GET("api/patients/{id}")
+    // Per obtenir les dades del pacient actual
+    @GET("api/patients/profile")
     suspend fun getPacientProfile(
-        @Header("Authorization") token: String,
-        @Path("id") id: String
+        @Header("Authorization") token: String
     ): Response<Pacient>
 
     // Per obtenir les dades del doctor i omplir el Singleton ---@GET("api/doctors/{id}")

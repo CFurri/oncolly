@@ -1,34 +1,16 @@
 package com.teknos.oncolly.screens.auth
 
+import android.app.Activity
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -39,18 +21,19 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.teknos.oncolly.R
-import com.teknos.oncolly.entity.Pacient
 import com.teknos.oncolly.network.LoginRequest
 import com.teknos.oncolly.singletons.SingletonApp
+import com.teknos.oncolly.utils.SessionManager
 import kotlinx.coroutines.launch
 
 // Paleta minimalista i professional
-private val BackgroundColor = Color(0xFFFAFAFA)
-private val PrimaryColor = Color(0xFF4F46E5)
-private val TextPrimary = Color(0xFF0F172A)
-private val TextSecondary = Color(0xFF64748B)
+private val BackgroundColor = Color(0xFFF8F9FA)
+private val PrimaryBlue = Color(0xFF259DF4)
+private val SecondaryGreen = Color(0xFF66BB6A)
+private val TextPrimary = Color(0xFF2C3E50)
+private val TextSecondary = Color(0xFF7F8C8D)
 private val BorderColor = Color(0xFFE2E8F0)
-private val ErrorColor = Color(0xFFDC2626)
+private val ErrorColor = Color(0xFFFF5252)
 
 @Composable
 fun LoginScreen(onLoginSuccess: (String) -> Unit) {
@@ -61,12 +44,94 @@ fun LoginScreen(onLoginSuccess: (String) -> Unit) {
 
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+    
+    // FUNCTION TO PERFORM LOGIN
+    fun performLogin(u: String, p: String) {
+        if (u.isBlank() || p.isBlank()) {
+            missatgeError = "Omple tots els camps"
+            return
+        }
+        isLoading = true
+        missatgeError = null
+
+        scope.launch {
+            try {
+                val api = SingletonApp.getInstance().api
+                val response = api.login(LoginRequest(u, p))
+
+                if (response.isSuccessful) {
+                    val body = response.body()
+                    if (body != null) {
+                        val app = SingletonApp.getInstance()
+                        app.ferLogin(body.userId, body.role, body.token)
+                        
+                        // SAVE SESSION
+                        SessionManager.saveSession(context, body.token, body.userId, body.role)
+
+                        val tokenAmbBearer = "Bearer ${body.token}"
+
+                        try {
+                            if (body.role.equals("PACIENT", ignoreCase = true)) {
+                                val respPacient = api.getPacientProfile(tokenAmbBearer)
+                                if (respPacient.isSuccessful) {
+                                    app.pacientActual = respPacient.body()
+                                }
+                            } else {
+                                val respDoctor = api.getDoctorProfile(tokenAmbBearer, body.userId)
+                                if (respDoctor.isSuccessful) {
+                                    app.doctorActual = respDoctor.body()
+                                }
+                            }
+                            onLoginSuccess(body.role)
+
+                        } catch (e: Exception) {
+                            onLoginSuccess(body.role)
+                        }
+                    }
+                } else {
+                    missatgeError = "Credencials incorrectes"
+                }
+            } catch (e: Exception) {
+                missatgeError = "Error de connexió: ${e.message}"
+            } finally {
+                isLoading = false
+            }
+        }
+    }
+
+    // DEEP LINK CHECK
+    LaunchedEffect(Unit) {
+        val intent = (context as? Activity)?.intent
+        val data = intent?.data
+        if (data != null && data.scheme == "oncolly" && data.host == "login") {
+            val e = data.getQueryParameter("e")
+            val p = data.getQueryParameter("p")
+            if (!e.isNullOrBlank() && !p.isNullOrBlank()) {
+                email = e
+                password = p
+                performLogin(e, p)
+                intent.data = null
+            }
+        }
+    }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(BackgroundColor)
     ) {
+        // Gradient Header Decoration
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(200.dp)
+                .background(
+                    androidx.compose.ui.graphics.Brush.verticalGradient(
+                        colors = listOf(PrimaryBlue.copy(alpha = 0.1f), Color.Transparent)
+                    )
+                )
+        )
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -74,30 +139,33 @@ fun LoginScreen(onLoginSuccess: (String) -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Logo simple
-            Image(
-                painter = painterResource(id = R.drawable.logo_oncolly),
-                contentDescription = "Logo Oncolly",
-                modifier = Modifier.size(72.dp)
-            )
+            Surface(
+                shape = RoundedCornerShape(24.dp),
+                color = Color.White,
+                shadowElevation = 8.dp,
+                modifier = Modifier.size(100.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Image(
+                        painter = painterResource(id = R.drawable.logo_oncolly),
+                        contentDescription = "Logo Oncolly",
+                        modifier = Modifier.size(60.dp)
+                    )
+                }
+            }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Títol net
-            Text(
-                text = "Oncolly",
-                fontSize = 32.sp,
-                fontWeight = FontWeight.Medium,
-                color = TextPrimary,
-                letterSpacing = (-0.5).sp
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
             Text(
-                text = "Accés a la teva àrea personal",
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Normal,
+                text = "Benvingut a Oncolly",
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
+                color = TextPrimary
+            )
+
+            Text(
+                text = "La teva salut, la nostra prioritat",
+                fontSize = 14.sp,
                 color = TextSecondary
             )
 
@@ -106,31 +174,17 @@ fun LoginScreen(onLoginSuccess: (String) -> Unit) {
             // Email
             OutlinedTextField(
                 value = email,
-                onValueChange = {
-                    email = it
-                    missatgeError = null
-                },
-                label = { Text("Correu electrònic", fontSize = 14.sp) },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Outlined.Email,
-                        contentDescription = null,
-                        tint = if (email.isNotEmpty()) PrimaryColor else TextSecondary
-                    )
-                },
+                onValueChange = { email = it; missatgeError = null },
+                label = { Text("Correu electrònic") },
+                leadingIcon = { Icon(Icons.Outlined.Email, null, tint = PrimaryBlue) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = Color.White,
+                    focusedBorderColor = PrimaryBlue,
+                    focusedLabelColor = PrimaryBlue,
                     unfocusedContainerColor = Color.White,
-                    focusedBorderColor = PrimaryColor,
-                    unfocusedBorderColor = BorderColor,
-                    focusedLabelColor = PrimaryColor,
-                    unfocusedLabelColor = TextSecondary,
-                    cursorColor = PrimaryColor,
-                    errorBorderColor = ErrorColor,
-                    errorLabelColor = ErrorColor
+                    focusedContainerColor = Color.White
                 ),
                 isError = missatgeError != null
             )
@@ -140,148 +194,53 @@ fun LoginScreen(onLoginSuccess: (String) -> Unit) {
             // Password
             OutlinedTextField(
                 value = password,
-                onValueChange = {
-                    password = it
-                    missatgeError = null
-                },
-                label = { Text("Contrasenya", fontSize = 14.sp) },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Outlined.Lock,
-                        contentDescription = null,
-                        tint = if (password.isNotEmpty()) PrimaryColor else TextSecondary
-                    )
-                },
+                onValueChange = { password = it; missatgeError = null },
+                label = { Text("Contrasenya") },
+                leadingIcon = { Icon(Icons.Outlined.Lock, null, tint = PrimaryBlue) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp),
                 visualTransformation = PasswordVisualTransformation(),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = Color.White,
+                    focusedBorderColor = PrimaryBlue,
+                    focusedLabelColor = PrimaryBlue,
                     unfocusedContainerColor = Color.White,
-                    focusedBorderColor = PrimaryColor,
-                    unfocusedBorderColor = BorderColor,
-                    focusedLabelColor = PrimaryColor,
-                    unfocusedLabelColor = TextSecondary,
-                    cursorColor = PrimaryColor,
-                    errorBorderColor = ErrorColor,
-                    errorLabelColor = ErrorColor
+                    focusedContainerColor = Color.White
                 ),
                 isError = missatgeError != null
             )
 
-            // Error message
             if (missatgeError != null) {
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     text = missatgeError ?: "",
                     color = ErrorColor,
                     fontSize = 13.sp,
-                    fontWeight = FontWeight.Normal,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 4.dp)
+                    fontWeight = FontWeight.Medium
                 )
             }
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Botó principal
             Button(
-                onClick = {
-                    if (email.isBlank() || password.isBlank()) {
-                        missatgeError = "Omple tots els camps"
-                        return@Button
-                    }
-
-                    isLoading = true
-                    missatgeError = null
-
-                    scope.launch {
-                        try {
-                            val api = SingletonApp.getInstance().api
-                            val response = api.login(LoginRequest(email, password))
-
-                            if (response.isSuccessful) {
-                                val body = response.body()
-                                if (body != null) {
-                                    val app = SingletonApp.getInstance()
-                                    app.ferLogin(body.userId, body.role, body.token)
-
-                                    val tokenAmbBearer = "Bearer ${body.token}"
-
-                                    try {
-                                        if (body.role.equals("PACIENT", ignoreCase = true)) {
-                                            val respPacient = api.getPacientProfile(tokenAmbBearer)
-                                            if (respPacient.isSuccessful) {
-                                                app.pacientActual = respPacient.body()
-                                            }
-                                        } else if (body.role.equals("DOCTOR", ignoreCase = true)) {
-                                            val respDoctor = api.getDoctorProfile(tokenAmbBearer, body.userId)
-                                            if (respDoctor.isSuccessful) {
-                                                app.doctorActual = respDoctor.body()
-                                            }
-                                        }
-
-                                        Toast.makeText(context, "Benvingut/da!", Toast.LENGTH_SHORT).show()
-                                        onLoginSuccess(body.role)
-
-                                    } catch (e: Exception) {
-                                        Toast.makeText(context, "Error baixant perfil: ${e.message}", Toast.LENGTH_LONG).show()
-                                        onLoginSuccess(body.role)
-                                    }
-                                }
-                            } else {
-                                missatgeError = "Credencials incorrectes"
-                            }
-                        } catch (e: Exception) {
-                            missatgeError = "Error de connexió"
-                        } finally {
-                            isLoading = false
-                        }
-                    }
-                },
+                onClick = { performLogin(email, password) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
                 enabled = !isLoading,
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = PrimaryColor,
-                    disabledContainerColor = PrimaryColor.copy(alpha = 0.5f),
+                    containerColor = PrimaryBlue,
+                    disabledContainerColor = PrimaryBlue.copy(alpha = 0.5f),
                     contentColor = Color.White
-                ),
-                elevation = ButtonDefaults.buttonElevation(
-                    defaultElevation = 0.dp,
-                    pressedElevation = 0.dp,
-                    disabledElevation = 0.dp
                 )
             ) {
                 if (isLoading) {
-                    CircularProgressIndicator(
-                        color = Color.White,
-                        modifier = Modifier.size(20.dp),
-                        strokeWidth = 2.dp
-                    )
+                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                 } else {
-                    Text(
-                        text = "Iniciar sessió",
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Medium,
-                        letterSpacing = 0.sp
-                    )
+                    Text(text = "Iniciar Sessió", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
             }
-
-            Spacer(modifier = Modifier.height(64.dp))
-
-            // Footer subtil
-            Text(
-                text = "Oncolly © 2024",
-                fontSize = 13.sp,
-                color = TextSecondary.copy(alpha = 0.6f),
-                fontWeight = FontWeight.Normal
-            )
         }
     }
 }

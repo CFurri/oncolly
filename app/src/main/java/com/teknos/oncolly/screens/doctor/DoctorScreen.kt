@@ -1,5 +1,6 @@
 package com.teknos.oncolly.screens.doctor
 
+import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -8,63 +9,19 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.EditCalendar
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.DateRange
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.DatePickerDefaults
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SheetState
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TimePicker
-import androidx.compose.material3.TimePickerDefaults
-import androidx.compose.material3.rememberDatePickerState
-import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.material3.rememberTimePickerState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -72,6 +29,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.teknos.oncolly.entity.Appointment
 import com.teknos.oncolly.entity.Pacient
 import com.teknos.oncolly.singletons.SingletonApp
+import com.teknos.oncolly.utils.PdfGenerator
 import com.teknos.oncolly.viewmodel.AppointmentUiState
 import com.teknos.oncolly.viewmodel.AppointmentViewModel
 import com.teknos.oncolly.viewmodel.DoctorViewModel
@@ -107,6 +65,7 @@ fun DoctorScreen(
 
     var selectedTab by remember { mutableStateOf(DoctorTab.PACIENTS) }
     var showAddPatientDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         doctorViewModel.loadPatients()
@@ -135,21 +94,31 @@ fun DoctorScreen(
         }
     ) { paddingValues ->
         Box(modifier = Modifier.padding(paddingValues).fillMaxSize()) {
-            when (selectedTab) {
-                DoctorTab.PACIENTS -> PantallaLlistaPacients(
-                    totsElsPacients = doctorViewModel.state.patients,
-                    onPacientClick = onPacientClick
-                )
-                DoctorTab.AGENDA -> AgendaScreen(
-                    state = appointmentViewModel.state,
-                    patients = doctorViewModel.state.patients,
-                    onReload = { appointmentViewModel.loadAppointments() },
-                    onCreate = { patientId, start, end, title, notes ->
-                        appointmentViewModel.createAppointment(patientId, start, end, title, notes)
-                    },
-                    onDelete = { id -> appointmentViewModel.deleteAppointment(id) }
-                )
-                DoctorTab.PERFIL -> PantallaPerfilDoctor(onLogout)
+            
+            // ANIMATED CONTENT FOR TABS
+            AnimatedContent(
+                targetState = selectedTab,
+                transitionSpec = {
+                    fadeIn() + slideInHorizontally(initialOffsetX = { it }) togetherWith fadeOut() + slideOutHorizontally(targetOffsetX = { -it })
+                },
+                label = "DoctorTabs"
+            ) { tab ->
+                when (tab) {
+                    DoctorTab.PACIENTS -> PantallaLlistaPacients(
+                        totsElsPacients = doctorViewModel.state.patients,
+                        onPacientClick = onPacientClick
+                    )
+                    DoctorTab.AGENDA -> AgendaScreen(
+                        state = appointmentViewModel.state,
+                        patients = doctorViewModel.state.patients,
+                        onReload = { appointmentViewModel.loadAppointments() },
+                        onCreate = { patientId, start, end, title, notes ->
+                            appointmentViewModel.createAppointment(patientId, start, end, title, notes)
+                        },
+                        onDelete = { id -> appointmentViewModel.deleteAppointment(id) }
+                    )
+                    DoctorTab.PERFIL -> PantallaPerfilDoctor(onLogout)
+                }
             }
         }
     }
@@ -175,6 +144,7 @@ fun DoctorScreen(
             onSubmit = { first, last, email, password, phone, dob ->
                 doctorViewModel.createPatient(first, last, email, password, phone, dob) {
                     showAddPatientDialog = false
+                    PdfGenerator.generateAndSharePatientPdf(context, first, last, email, password)
                 }
             }
         )
@@ -303,11 +273,10 @@ fun ItemPacientDisseny(pacient: Pacient, onClick: (String) -> Unit) {
     Card(
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(0.dp), // Minimalista (flat)
+        elevation = CardDefaults.cardElevation(0.dp),
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick(pacient.id) }
-            // Afegim una mica de vora subtil
             .background(Color.White, RoundedCornerShape(12.dp))
     ) {
         Row(
@@ -339,11 +308,6 @@ fun ItemPacientDisseny(pacient: Pacient, onClick: (String) -> Unit) {
                     color = TextDark
                 )
                 Text(text = pacient.email, color = TextGrey, fontSize = 12.sp)
-                
-                val telefon = pacient.phoneNumber ?: ""
-                if (telefon.isNotEmpty()) {
-                    Text(text = telefon, color = TextGrey, fontSize = 12.sp)
-                }
             }
         }
     }
@@ -362,15 +326,14 @@ fun AgendaScreen(
     val dayFormatter = remember { DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(Locale.getDefault()) }
     val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm") }
     val now = remember { LocalDateTime.now().withSecond(0).withNano(0) }
-    
-    val appointmentViewModel: AppointmentViewModel = viewModel() // Per netejar errors/feedback
+    val appointmentViewModel: AppointmentViewModel = viewModel()
 
     var showSheet by remember { mutableStateOf(false) }
     var draftPatient by remember { mutableStateOf(patients.firstOrNull()?.id.orEmpty()) }
     var draftTitle by remember { mutableStateOf("Visita seguiment") }
     var draftNotes by remember { mutableStateOf("") }
     var draftStart by remember { mutableStateOf(now) }
-    var draftDurationMinutes by remember { mutableStateOf(30) } // Int per al stepper
+    var draftDurationMinutes by remember { mutableStateOf(30) } 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     LaunchedEffect(patients) {
@@ -380,7 +343,6 @@ fun AgendaScreen(
     }
 
     Scaffold(
-        containerColor = BgLight,
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = { showSheet = true },
@@ -389,13 +351,15 @@ fun AgendaScreen(
                 containerColor = SecondaryGreen,
                 contentColor = Color.White
             )
-        }
+        },
+        containerColor = BgLight
     ) { padding ->
         Column(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
-                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -408,8 +372,6 @@ fun AgendaScreen(
                 }
             }
             
-            Spacer(modifier = Modifier.height(16.dp))
-
             if (state.isLoading && state.appointments.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = PrimaryBlue)
@@ -419,10 +381,7 @@ fun AgendaScreen(
                     Text("Sense cites programades.", color = TextGrey)
                 }
             } else {
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    contentPadding = PaddingValues(bottom = 80.dp)
-                ) {
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(bottom = 80.dp)) {
                     state.appointments
                         .sortedBy { it.startTime }
                         .groupBy { runCatching { LocalDateTime.parse(it.startTime).toLocalDate() }.getOrNull() }
@@ -448,7 +407,6 @@ fun AgendaScreen(
             }
 
             state.feedback?.let {
-                // Toast manual o feedback visual
                 LaunchedEffect(it) {
                     delay(2000)
                     appointmentViewModel.clearFeedback()
@@ -504,11 +462,10 @@ private fun AppointmentCard(
     ) {
         Row(
             modifier = Modifier
-                .padding(12.dp) // Més compacte
+                .padding(12.dp)
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Columna d'Hora (esquerra)
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
@@ -521,7 +478,6 @@ private fun AppointmentCard(
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            // Informació central
             Column(modifier = Modifier.weight(1f)) {
                 Text(appointment.title, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = TextDark)
                 appointment.patientName?.let { 
@@ -562,18 +518,13 @@ private fun AppointmentSheet(
     val dateFormatter = remember { DateTimeFormatter.ofPattern("EEE, dd MMM") }
     val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm") }
     var patientMenuExpanded by remember { mutableStateOf(false) }
+    var searchText by remember { mutableStateOf("") }
     
     var showStartDatePicker by remember { mutableStateOf(false) }
     var showStartTimePicker by remember { mutableStateOf(false) }
     
-    val startDateState = rememberDatePickerState(
-        initialSelectedDateMillis = startTime.toEpochMillis()
-    )
-    val startTimeState = rememberTimePickerState(
-        initialHour = startTime.hour,
-        initialMinute = startTime.minute,
-        is24Hour = true
-    )
+    val startDateState = rememberDatePickerState(initialSelectedDateMillis = startTime.toEpochMillis())
+    val startTimeState = rememberTimePickerState(initialHour = startTime.hour, initialMinute = startTime.minute, is24Hour = true)
 
     LaunchedEffect(startTime) {
         startDateState.selectedDateMillis = startTime.toEpochMillis()
@@ -594,16 +545,18 @@ private fun AppointmentSheet(
         ) {
             Text("Nova Cita", fontWeight = FontWeight.Bold, fontSize = 22.sp, color = TextDark)
 
-            // Selector de pacient
+            // SELECTOR DE PACIENT MILLORAT (Searchable)
             Box {
+                val selectedPatientName = patients.find { it.id == selectedPatient }?.let { "${it.firstName} ${it.lastName}" } ?: "Selecciona pacient"
+                
                 OutlinedTextField(
-                    value = patients.find { it.id == selectedPatient }?.email ?: "Selecciona pacient",
+                    value = selectedPatientName,
                     onValueChange = {},
                     readOnly = true,
                     modifier = Modifier.fillMaxWidth().clickable { patientMenuExpanded = true },
                     label = { Text("Pacient") },
                     trailingIcon = { Icon(Icons.Default.ArrowDropDown, contentDescription = null) },
-                    enabled = false, // Per fer el clic al Box, no al TextField
+                    enabled = false, 
                     colors = OutlinedTextFieldDefaults.colors(
                         disabledTextColor = TextDark,
                         disabledBorderColor = Color.LightGray,
@@ -611,21 +564,44 @@ private fun AppointmentSheet(
                         disabledTrailingIconColor = TextGrey
                     )
                 )
-                // Overlay invisible per capturar el clic
                 Box(modifier = Modifier.matchParentSize().clickable { patientMenuExpanded = true })
                 
                 DropdownMenu(
                     expanded = patientMenuExpanded,
-                    onDismissRequest = { patientMenuExpanded = false }
+                    onDismissRequest = { patientMenuExpanded = false },
+                    modifier = Modifier.fillMaxWidth(0.9f).heightIn(max = 300.dp).background(Color.White)
                 ) {
-                    patients.forEach { pacient ->
-                        DropdownMenuItem(
-                            text = { Text(pacient.email) },
-                            onClick = {
-                                onPatientChange(pacient.id)
-                                patientMenuExpanded = false
-                            }
-                        )
+                    // Search Bar dins del menú
+                    OutlinedTextField(
+                        value = searchText,
+                        onValueChange = { searchText = it },
+                        placeholder = { Text("Buscar...") },
+                        modifier = Modifier.fillMaxWidth().padding(8.dp),
+                        singleLine = true
+                    )
+                    
+                    val filteredPatients = patients.filter { 
+                        "${it.firstName} ${it.lastName}".contains(searchText, ignoreCase = true) || it.email.contains(searchText, ignoreCase = true) 
+                    }
+                    
+                    if (filteredPatients.isEmpty()) {
+                        DropdownMenuItem(text = { Text("Cap resultat", color = TextGrey) }, onClick = {})
+                    } else {
+                        filteredPatients.forEach { pacient ->
+                            DropdownMenuItem(
+                                text = { 
+                                    Column {
+                                        Text("${pacient.firstName} ${pacient.lastName}", fontWeight = FontWeight.Bold)
+                                        Text(pacient.email, fontSize = 12.sp, color = TextGrey)
+                                    }
+                                },
+                                onClick = {
+                                    onPatientChange(pacient.id)
+                                    patientMenuExpanded = false
+                                    searchText = "" // Reset search
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -637,7 +613,7 @@ private fun AppointmentSheet(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // Data i Hora en una fila
+            // Data i Hora
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Box(modifier = Modifier.weight(1f).clickable { showStartDatePicker = true }) {
                     OutlinedTextField(
@@ -669,7 +645,7 @@ private fun AppointmentSheet(
                 }
             }
 
-            // DURADA (Stepper)
+            // Durada
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -684,7 +660,6 @@ private fun AppointmentSheet(
                     ) {
                         Icon(Icons.Default.Remove, null, tint = PrimaryBlue)
                     }
-                    
                     Text(
                         text = "$durationMinutes",
                         modifier = Modifier.padding(horizontal = 16.dp),
@@ -692,7 +667,6 @@ private fun AppointmentSheet(
                         fontSize = 18.sp,
                         color = TextDark
                     )
-                    
                     IconButton(
                         onClick = { onDurationChange(durationMinutes + 15) },
                         modifier = Modifier.size(32.dp).background(Color.White, CircleShape)
@@ -931,6 +905,12 @@ fun PantallaPerfilDoctor(onLogout: () -> Unit) {
             fontSize = 24.sp, 
             fontWeight = FontWeight.Bold, 
             color = TextDark
+        )
+        Text(
+            text = doctor?.specialization ?: "Especialitat desconeguda", 
+            fontSize = 16.sp, 
+            color = SecondaryGreen,
+            fontWeight = FontWeight.SemiBold
         )
         Text(
             text = doctor?.email ?: "", 

@@ -69,4 +69,7 @@ dependencies {
 
     //UX icons
     implementation("androidx.compose.material:material-icons-extended:1.7.8")
+
+    // QR Code generation
+    implementation("com.google.zxing:core:3.5.2")
 }

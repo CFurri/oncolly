@@ -2,12 +2,16 @@ package com.teknos.oncolly.screens.doctor
 
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -22,45 +26,32 @@ import androidx.compose.ui.unit.sp
 import com.teknos.oncolly.entity.Activity
 import com.teknos.oncolly.entity.Pacient
 import com.teknos.oncolly.singletons.SingletonApp
+import com.teknos.oncolly.utils.PdfGenerator
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PacientDetailScreen(pacientId: String, onBack: () -> Unit) {
 
-    // Estats
     var pacient by remember { mutableStateOf<Pacient?>(null) }
     var activitatsList by remember { mutableStateOf<List<Activity>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
-
-    // Control de Pestanyes (0 = Activitats, 1 = Fitxa)
     var selectedTab by remember { mutableIntStateOf(0) }
-
     val context = LocalContext.current
 
-    // 1. CARREGAR DADES (PACIENT I ACTIVITATS)
     LaunchedEffect(Unit) {
         try {
             val api = SingletonApp.getInstance().api
             val token = "Bearer ${SingletonApp.getInstance().userToken}"
 
-            // A. Carreguem Pacients
             val respPacients = api.getPacients(token)
             if (respPacients.isSuccessful) {
                 pacient = respPacients.body()?.find { it.id == pacientId }
             }
 
-            // B. Carreguem Activitats (Si el pacient existeix)
-            // NOTA: Si el servidor retorna TOTES les activitats de tothom,
-            // hauràs de filtrar aquí per 'it.patientId == pacientId'
             val respActivitats = api.getActivities(token, pacientId)
             if (respActivitats.isSuccessful) {
-                // Ja no cal filtrar res, el servidor ens dona només les d'aquest pacient
                 activitatsList = respActivitats.body() ?: emptyList()
-            } else {
-                // Opcional: Pots controlar errors aquí si vols
-                println("Error baixant activitats: ${respActivitats.code()}")
             }
-
         } catch (e: Exception) {
             Toast.makeText(context, "Error de connexió", Toast.LENGTH_SHORT).show()
         } finally {
@@ -69,42 +60,50 @@ fun PacientDetailScreen(pacientId: String, onBack: () -> Unit) {
     }
 
     Scaffold(
+        containerColor = BgLight, // Use consistent BgLight
         topBar = {
             TopAppBar(
-                title = { Text(if(pacient != null) pacient!!.email else "Carregant...") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Enrere") }
+                title = { 
+                    Text(
+                        if(pacient != null) "${pacient!!.firstName} ${pacient!!.lastName}" else "Carregant...",
+                        fontWeight = FontWeight.Bold,
+                        color = TextDark
+                    ) 
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFFE3F2FD))
+                navigationIcon = {
+                    IconButton(onClick = onBack) { 
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Enrere", tint = PrimaryBlue) 
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         }
     ) { padding ->
         Column(modifier = Modifier.padding(padding).fillMaxSize()) {
 
-            // 2. BARRA DE PESTANYES
-            TabRow(selectedTabIndex = selectedTab) {
-                Tab(
-                    selected = selectedTab == 0,
-                    onClick = { selectedTab = 0 },
-                    text = { Text("Activitats") },
-                    icon = { Icon(Icons.Default.List, null) }
+            // Custom Tabs
+            Row(modifier = Modifier.fillMaxWidth().background(Color.White)) {
+                TabItem(
+                    text = "Activitats",
+                    icon = Icons.AutoMirrored.Filled.List,
+                    isSelected = selectedTab == 0,
+                    onClick = { selectedTab = 0 }
                 )
-                Tab(
-                    selected = selectedTab == 1,
-                    onClick = { selectedTab = 1 },
-                    text = { Text("Fitxa Tècnica") },
-                    icon = { Icon(Icons.Default.Info, null) }
+                TabItem(
+                    text = "Fitxa",
+                    icon = Icons.Default.Info,
+                    isSelected = selectedTab == 1,
+                    onClick = { selectedTab = 1 }
                 )
             }
 
-            // 3. CONTINGUT SEGONS LA PESTANYA
             Box(modifier = Modifier.fillMaxSize()) {
                 if (isLoading) {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = PrimaryBlue)
                 } else if (pacient != null) {
                     when (selectedTab) {
                         0 -> LlistaActivitatsPacient(activitatsList)
-                        1 -> ContingutPacient(pacient!!) // La teva funció antiga
+                        1 -> ContingutPacient(pacient!!)
                     }
                 }
             }
@@ -112,12 +111,31 @@ fun PacientDetailScreen(pacientId: String, onBack: () -> Unit) {
     }
 }
 
-// --- PANTALLA DE LA LLISTA D'ACTIVITATS ---
+@Composable
+fun RowScope.TabItem(text: String, icon: ImageVector, isSelected: Boolean, onClick: () -> Unit) {
+    val color = if (isSelected) PrimaryBlue else TextGrey
+    Column(
+        modifier = Modifier
+            .weight(1f)
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(icon, null, tint = color)
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(text, color = color, fontWeight = if(isSelected) FontWeight.Bold else FontWeight.Normal, fontSize = 14.sp)
+        Spacer(modifier = Modifier.height(8.dp))
+        if (isSelected) {
+            Box(modifier = Modifier.height(2.dp).width(40.dp).background(PrimaryBlue))
+        }
+    }
+}
+
 @Composable
 fun LlistaActivitatsPacient(llista: List<Activity>) {
     if (llista.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("Aquest pacient encara no ha registrat activitat.", color = Color.Gray)
+            Text("Aquest pacient encara no ha registrat activitat.", color = TextGrey)
         }
     } else {
         LazyColumn(
@@ -133,51 +151,48 @@ fun LlistaActivitatsPacient(llista: List<Activity>) {
 
 @Composable
 fun ItemActivitat(activitat: Activity) {
-    // Determinem icona i color segons el tipus (fent servir strings del servidor)
     val (icon, color) = when (activitat.activityType.lowercase()) {
-        "walking" -> Pair(Icons.Default.DirectionsWalk, Color(0xFF259DF4))
+        "walking" -> Pair(Icons.AutoMirrored.Filled.DirectionsWalk, PrimaryBlue)
         "medication" -> Pair(Icons.Default.Medication, Color(0xFF565D6D))
-        "eating" -> Pair(Icons.Default.Restaurant, Color(0xFF66BB6A))
-        "sleep" -> Pair(Icons.Default.Bed, Color(0xFF66BB6A))
-        else -> Pair(Icons.Default.Info, Color.Gray)
+        "eating" -> Pair(Icons.Default.Restaurant, SecondaryGreen)
+        "sleep" -> Pair(Icons.Default.Bed, SecondaryGreen)
+        else -> Pair(Icons.Default.Info, TextGrey)
     }
 
     Card(
-        elevation = CardDefaults.cardElevation(2.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        elevation = CardDefaults.cardElevation(0.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        modifier = Modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier.padding(16.dp).fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Icona rodona
             Surface(shape = CircleShape, color = color.copy(alpha = 0.1f), modifier = Modifier.size(48.dp)) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(icon, null, tint = color)
                 }
             }
-
             Spacer(modifier = Modifier.width(16.dp))
-
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = activitat.activityType.uppercase(),
                     fontWeight = FontWeight.Bold,
                     fontSize = 12.sp,
-                    color = Color.Gray
+                    color = TextGrey
                 )
                 Text(
                     text = activitat.value,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 16.sp,
+                    color = TextDark
                 )
             }
-
-            // Data (Si vols formatar-la millor, caldria un parsejador de dates)
             Text(
-                text = activitat.occurredAt.take(10), // Només la data "2025-12-13"
+                text = activitat.occurredAt.take(10),
                 fontSize = 12.sp,
-                color = Color.Gray
+                color = TextGrey
             )
         }
     }
@@ -185,76 +200,89 @@ fun ItemActivitat(activitat: Activity) {
 
 @Composable
 fun ContingutPacient(pacient: Pacient) {
+    val context = LocalContext.current
+    
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // CAPÇALERA
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                imageVector = Icons.Default.Person,
-                contentDescription = null,
-                modifier = Modifier.size(60.dp),
-                tint = Color.Gray
-            )
+            Surface(shape = CircleShape, color = PrimaryBlue.copy(alpha = 0.1f), modifier = Modifier.size(60.dp)) {
+                Box(contentAlignment = Alignment.Center) {
+                    Text(
+                        text = pacient.firstName.take(1).uppercase(),
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = PrimaryBlue
+                    )
+                }
+            }
             Spacer(modifier = Modifier.width(16.dp))
             Column {
-                Text(text = pacient.email, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                Text(text = "Pacient Actiu", fontSize = 14.sp, color = Color(0xFF2E7D32))
+                Text(text = "${pacient.firstName} ${pacient.lastName}", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TextDark)
+                Text(text = "Pacient Actiu", fontSize = 14.sp, color = SecondaryGreen, fontWeight = FontWeight.SemiBold)
             }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
-        Divider()
+
+        // SHARE BUTTON
+        Button(
+            onClick = {
+                val success = PdfGenerator.shareExistingPdf(context, pacient.firstName, pacient.lastName)
+                if (!success) {
+                    Toast.makeText(context, "No s'ha trobat el PDF original. No es pot regenerar sense contrasenya.", Toast.LENGTH_LONG).show()
+                }
+            },
+            colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
+            modifier = Modifier.fillMaxWidth().height(50.dp),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Icon(Icons.Default.Share, contentDescription = null, tint = Color.White)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Compartir Credencials", color = Color.White, fontWeight = FontWeight.Bold)
+        }
+
         Spacer(modifier = Modifier.height(24.dp))
 
-        // TARGETES D'INFORMACIÓ
         InfoCard(
             titol = "Correu Electrònic",
             valor = pacient.email,
-            icon = Icons.Default.Email,
-            colorFons = Color(0xFFE3F2FD)
+            icon = Icons.Default.Email
         )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
+        Spacer(modifier = Modifier.height(12.dp))
         InfoCard(
             titol = "Telèfon de contacte",
             valor = pacient.phoneNumber ?: "No informat",
-            icon = Icons.Default.Phone,
-            colorFons = Color(0xFFE8F5E9)
+            icon = Icons.Default.Phone
         )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
+        Spacer(modifier = Modifier.height(12.dp))
         InfoCard(
             titol = "Data de Naixement",
             valor = pacient.dateOfBirth ?: "Desconeguda",
-            icon = Icons.Default.DateRange,
-            colorFons = Color(0xFFFFF3E0)
+            icon = Icons.Default.DateRange
         )
     }
 }
 
 @Composable
-fun InfoCard(titol: String, valor: String, icon: ImageVector?, colorFons: Color) {
+fun InfoCard(titol: String, valor: String, icon: ImageVector) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = colorFons),
-        elevation = CardDefaults.cardElevation(2.dp)
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(0.dp),
+        shape = RoundedCornerShape(12.dp)
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            if (icon != null) {
-                Icon(icon, contentDescription = null, tint = Color.Black)
-                Spacer(modifier = Modifier.width(16.dp))
-            }
+            Icon(icon, contentDescription = null, tint = PrimaryBlue)
+            Spacer(modifier = Modifier.width(16.dp))
             Column {
-                Text(text = titol, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color.DarkGray)
-                Text(text = valor, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Text(text = titol, fontSize = 12.sp, color = TextGrey)
+                Text(text = valor, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = TextDark)
             }
         }
     }

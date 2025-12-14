@@ -1,12 +1,14 @@
 package com.teknos.oncolly.singletons
 
+import com.teknos.oncolly.entity.Doctor
+import com.teknos.oncolly.entity.Pacient
 import com.teknos.oncolly.network.ApiService
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 class SingletonApp private constructor() {
     // --- AQUI GUARDEM LES NOSTRES 'COSES' GLOBALS ---
 
-    // La connexió a Retrofit
+    // --- RETROFIT i API ---
     val retrofit: Retrofit by lazy {
         Retrofit.Builder()
             .baseUrl("http://oncolly.arxan.me")
@@ -18,7 +20,11 @@ class SingletonApp private constructor() {
         retrofit.create(ApiService::class.java)
     }
 
-    // Les dades de sessió (Usuari actual)
+    // --- OBJECTES SENCERS EN MEMÒRIA ---
+    var pacientActual: Pacient? = null
+    var doctorActual: Doctor? = null
+
+    // --- DADES DE SESSIÓ ---
     var userId: String? = null
     var userRole: String? = null // "DOCTOR" o "PACIENT"
     var userToken: String? = null

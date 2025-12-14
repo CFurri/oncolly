@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.teknos.oncolly.singletons.SingletonApp
 
 // --- COLORS EXTRETS DEL DISSENY (CSS) ---
 val PrimaryBlue = Color(0xFF259DF4) // El blau del CSS
@@ -32,12 +33,19 @@ val TextGrey = Color(0xFF565D6D)    // neutral-600 del CSS
 @Composable
 fun PacientScreen(
     onLogout: () -> Unit,
-    onActivityClick: (String) -> Unit // <--- AFEGEIX AIXÒ (Rep un text, l'ID de l'activitat)
+    onActivityClick: (String) -> Unit,
+    onNavigateToActivitiesList: () -> Unit,
+    onNavigateToProfile: () -> Unit
 ) {
     Scaffold(
         // 1. BARRA DE NAVEGACIÓ INFERIOR (Amb la línia groga)
         bottomBar = {
-            BottomNavigationBar(currentTab = 0) // 0 = Home
+            BottomNavigationBar(
+                currentTab = 0,
+                onNavigateToHome = { /* Ja hi som, no cal fer res o recarregar */ },
+                onNavigateToActivities = onNavigateToActivitiesList,
+                onNavigateToProfile = onNavigateToProfile
+            )
         },
         containerColor = Color(0xFFF8F9FA) // Fons gris molt claret
     ) { padding ->
@@ -133,6 +141,8 @@ fun PacientScreen(
 
 @Composable
 fun HeaderPacient() {
+    val pacient = SingletonApp.getInstance().pacientActual
+    val nomAMostrar = pacient?.email ?: "Pacient"
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -154,12 +164,20 @@ fun HeaderPacient() {
             }
         }
         Spacer(modifier = Modifier.width(16.dp))
-        Text(
-            text = "Patient Home",
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-            color = TextGrey
-        )
+        Column{
+            Text(
+                text = "Hola, $nomAMostrar",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = TextGrey
+            )
+            Text(
+                text = "Patient Home",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = TextGrey
+            )
+        }
     }
 }
 
@@ -211,8 +229,12 @@ fun ActivityBubble(
 }
 
 @Composable
-fun BottomNavigationBar(currentTab: Int) {
-    // Contenidor amb vora groga superior
+fun BottomNavigationBar(
+    currentTab: Int,
+    onNavigateToHome: () -> Unit,
+    onNavigateToActivities: () -> Unit,
+    onNavigateToProfile: () -> Unit
+) {
     Surface(
         color = Color.White,
         modifier = Modifier.fillMaxWidth(),
@@ -238,17 +260,20 @@ fun BottomNavigationBar(currentTab: Int) {
                 BottomNavItem(
                     icon = Icons.Outlined.Home,
                     label = "Home",
-                    isSelected = currentTab == 0
+                    isSelected = currentTab == 0,
+                    onClick = onNavigateToHome
                 )
                 BottomNavItem(
                     icon = Icons.Outlined.Assignment,
                     label = "Activities",
-                    isSelected = currentTab == 1
+                    isSelected = currentTab == 1,
+                    onClick = onNavigateToActivities
                 )
                 BottomNavItem(
                     icon = Icons.Outlined.Person,
                     label = "Profile",
-                    isSelected = currentTab == 2
+                    isSelected = currentTab == 2,
+                    onClick = onNavigateToProfile
                 )
             }
         }
@@ -256,11 +281,11 @@ fun BottomNavigationBar(currentTab: Int) {
 }
 
 @Composable
-fun BottomNavItem(icon: ImageVector, label: String, isSelected: Boolean) {
+fun BottomNavItem(icon: ImageVector, label: String, isSelected: Boolean, onClick: () -> Unit) {
     val color = if (isSelected) PrimaryBlue else Color.Gray
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.clickable { }
+        modifier = Modifier.clickable { onClick() }
     ) {
         Icon(imageVector = icon, contentDescription = label, tint = color)
         Text(

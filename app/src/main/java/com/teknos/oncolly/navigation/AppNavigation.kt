@@ -1,6 +1,10 @@
 package com.teknos.oncolly.navigation
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -11,10 +15,15 @@ import com.teknos.oncolly.screens.doctor.DoctorScreen
 import com.teknos.oncolly.screens.auth.LoginScreen
 import com.teknos.oncolly.screens.doctor.PacientDetailScreen
 import com.teknos.oncolly.screens.patient.ActivityType
+import com.teknos.oncolly.screens.patient.BottomNavigationBar
 import com.teknos.oncolly.screens.patient.DynamicActivityScreen
 import com.teknos.oncolly.screens.patient.PacientScreen
 import com.teknos.oncolly.screens.splash.SplashScreen
+import com.teknos.oncolly.viewmodel.ActivitiesViewModel
 import com.teknos.oncolly.viewmodel.PatientViewModel
+import com.teknos.oncolly.screens.patient.PatientActivitiesScreen
+import com.teknos.oncolly.screens.patient.ProfileScreen
+
 
 @Composable
 fun AppNavigation() {
@@ -73,13 +82,15 @@ fun AppNavigation() {
 
         composable("home_pacient") {
             PacientScreen(
-                onLogout = {
-                    navController.navigate("login") { popUpTo(0) }
-                },
+                onLogout = { navController.navigate("login") { popUpTo(0) } },
                 onActivityClick = { activityId ->
-                    // Aquesta és la màgia: rebem "walking" i naveguem a la pantalla dinàmica
                     navController.navigate("activity_screen/$activityId")
-                }
+                },
+                // AQUI ESTÀ L'ONCLICK QUE DEMANAVES:
+                onNavigateToActivitiesList = {
+                    navController.navigate("patient_activities_list")
+                },
+                onNavigateToProfile = { navController.navigate("profile_pacient") } // <--- AFEGEIX AIXÒ
             )
         }
 
@@ -99,6 +110,45 @@ fun AppNavigation() {
                     onBack = { navController.popBackStack() } // <--- DINS del parèntesi
                 )
             }
+        }
+
+        composable("patient_activities_list") {
+            // 1. Instanciem el ViewModel
+            // Si aquí et surt vermell, assegura't de tenir l'import: androidx.lifecycle.viewmodel.compose.viewModel
+            val viewModel: ActivitiesViewModel = viewModel()
+
+            // 2. Estructura amb Scaffold
+            Scaffold(
+                bottomBar = {
+                    BottomNavigationBar(
+                        currentTab = 1,
+                        onNavigateToHome = { navController.navigate("home_pacient") { popUpTo("home_pacient") { inclusive = true } } },
+                        onNavigateToActivities = {},
+                        onNavigateToProfile = { navController.navigate("profile_pacient") }
+                    )
+                }
+            ) { paddingValues ->
+                // 3. Contingut
+                Box(modifier = Modifier.padding(paddingValues)) {
+                    PatientActivitiesScreen(viewModel = viewModel)
+                }
+            }
+        }
+
+        composable("profile_pacient") {
+            ProfileScreen(
+                onLogout = {
+                    navController.navigate("login") { popUpTo(0) }
+                },
+                onNavigateToHome = {
+                    navController.navigate("home_pacient") {
+                        popUpTo("home_pacient") { inclusive = true }
+                    }
+                },
+                onNavigateToActivities = {
+                    navController.navigate("patient_activities_list")
+                }
+            )
         }
     }
 }

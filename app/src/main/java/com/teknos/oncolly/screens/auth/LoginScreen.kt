@@ -101,34 +101,38 @@ fun LoginScreen(onLoginSuccess: (String) -> Unit) {
                         if (response.isSuccessful) {
                             val body = response.body()
                             if (body != null) {
-                                // 2. AVÍS D'ÈXIT
-                                Toast.makeText(context, "Benvingut/da ${body.role}!", Toast.LENGTH_LONG).show()
+                                // 1. Guardem les credencials bàsiques
+                                val app = SingletonApp.getInstance()
+                                app.ferLogin(body.userId, body.role, body.token)
 
-                                SingletonApp.getInstance().ferLogin(
-                                    id = body.userId,
-                                    role = body.role,
-                                    token = body.token
-                                )
-                                onLoginSuccess(body.role)
+                                // 2. BAIXEM EL PERFIL SENCER SEGONS EL ROL
+                                val tokenAmbBearer = "Bearer ${body.token}"
+
+                                try {
+                                    if (body.role.equals("PACIENT", ignoreCase = true)) {
+                                        // Demanem el pacient al servidor
+                                        val respPacient = api.getPacientProfile(tokenAmbBearer, body.userId)
+                                        if (respPacient.isSuccessful) {
+                                            // --- AQUÍ EL GUARDEM A LA MEMÒRIA GLOBAL ---
+                                            app.pacientActual = respPacient.body()
+                                        }
+                                    } else if (body.role.equals("DOCTOR", ignoreCase = true)) {
+                                        val respDoctor = api.getDoctorProfile(tokenAmbBearer, body.userId)
+                                        if (respDoctor.isSuccessful) {
+                                            app.doctorActual = respDoctor.body()
+                                        }
+                                    }
+
+                                    // 3. Tot llest, naveguem i avisem
+                                    Toast.makeText(context, "Benvingut/da ${body.role}!", Toast.LENGTH_LONG).show()
+                                    onLoginSuccess(body.role)
+
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "Login correcte però error baixant perfil: ${e.message}", Toast.LENGTH_LONG).show()
+                                    // Encara que falli baixar el perfil, potser vols deixar entrar l'usuari igualment:
+                                    onLoginSuccess(body.role)
+                                }
                             }
-                        } else {
-                            // 3. AVÍS D'ERROR DEL SERVIDOR (Ex: 401 Contrasenya malament)
-                            if (response.code() == 401) {
-                                Toast.makeText(context, "Email o contrasenya incorrectes", Toast.LENGTH_LONG).show()
-                            } else {
-                                Toast.makeText(context, "Error del servidor: ${response.code()}", Toast.LENGTH_LONG).show()
-                            }
-                        }
-                    } catch (e: Exception) {
-                        // 4. AVÍS DE FALLADA DE XARXA (Sense internet o servidor apagat)
-                        // Porta del darrere (Backdoor) per proves
-                        if (email == "doc" && password == "1234") {
-                            Toast.makeText(context, "Mode Prova: Doctor", Toast.LENGTH_SHORT).show()
-                            SingletonApp.getInstance().ferLogin("1", "DOCTOR", "fake_token")
-                            onLoginSuccess("doctor")
-                        } else {
-                            Toast.makeText(context, "Error REAL: ${e.message}", Toast.LENGTH_LONG).show()
-                            println("ERROR LOGCAT: ${e.stackTraceToString()}")
                         }
                     } finally {
                          isLoading = false // Desactivem càrrega passi el que passi

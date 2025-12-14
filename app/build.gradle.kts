@@ -67,5 +67,6 @@ dependencies {
     // GSON Converter (Per convertir el JSON del servidor a objectes Kotlin automàticament)
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
 
+    //UX icons
     implementation("androidx.compose.material:material-icons-extended:1.7.8")
 }

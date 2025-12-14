@@ -1,7 +1,6 @@
 package com.teknos.oncolly.screens.patient
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -15,20 +14,21 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.teknos.oncolly.singletons.SingletonApp
+import kotlin.math.cos
+import kotlin.math.sin
 
-// --- COLORS EXTRETS DEL DISSENY (CSS) ---
-val PrimaryBlue = Color(0xFF259DF4) // El blau del CSS
-val SecondaryGreen = Color(0xFF66BB6A) // Un verd similar al de la imatge
-val TextGrey = Color(0xFF565D6D)    // neutral-600 del CSS
+// --- ELS TEUS COLORS ORIGINALS ---
+val PrimaryBlue = Color(0xFF259DF4)
+val SecondaryGreen = Color(0xFF66BB6A)
+val TextGrey = Color(0xFF565D6D)
 
 @Composable
 fun PacientScreen(
@@ -37,123 +37,106 @@ fun PacientScreen(
     onNavigateToActivitiesList: () -> Unit,
     onNavigateToProfile: () -> Unit
 ) {
+    // FONS AMB GRADIENT: De blanc (dalt) a blau molt claret (baix)
+    val backgroundBrush = Brush.verticalGradient(
+        colors = listOf(
+            Color.White,
+            PrimaryBlue.copy(alpha = 0.15f) // Un toc suau de color al fons
+        )
+    )
+
     Scaffold(
-        // 1. BARRA DE NAVEGACIÓ INFERIOR (Amb la línia groga)
         bottomBar = {
             BottomNavigationBar(
                 currentTab = 0,
-                onNavigateToHome = { /* Ja hi som, no cal fer res o recarregar */ },
+                onNavigateToHome = { },
                 onNavigateToActivities = onNavigateToActivitiesList,
                 onNavigateToProfile = onNavigateToProfile
             )
-        },
-        containerColor = Color(0xFFF8F9FA) // Fons gris molt claret
+        }
     ) { padding ->
 
-        Column(
+        // Contenidor principal amb el degradat
+        Box(
             modifier = Modifier
-                .padding(padding)
                 .fillMaxSize()
+                .background(brush = backgroundBrush)
+                .padding(padding)
         ) {
-            // 2. CAPÇALERA
-            HeaderPacient()
+            Column(modifier = Modifier.fillMaxSize()) {
 
-            // 3. EL "SISTEMA SOLAR" DE BOTONS
-            // Utilitzem un Box per poder posar elements on vulguem
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .weight(1f), // Ocupa tot l'espai disponible
-                contentAlignment = Alignment.Center // Tot parteix del centre
-            ) {
-                // --- DEFINIM ELS BOTONS I LA SEVA POSICIÓ (X, Y) ---
+                // 1. CAPÇALERA
+                HeaderPacient()
 
-                // Centre - Dalt: Walking
-                ActivityBubble(
-                    text = "Walking",
-                    icon = Icons.Default.DirectionsWalk,
-                    color = PrimaryBlue,
-                    offsetX = 0.dp, offsetY = (-120).dp,
-                    onClick = { onActivityClick("walking") }
-                )
+                // 2. SISTEMA SOLAR (Cercle de botons)
+                // BoxWithConstraints ens permet saber l'espai disponible per centrar-ho bé
+                BoxWithConstraints(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    // Llista d'activitats per pintar-les automàticament
+                    val items = listOf(
+                        Triple("Walking", Icons.Default.DirectionsWalk, PrimaryBlue),
+                        Triple("Eating", Icons.Default.Restaurant, SecondaryGreen),
+                        Triple("Medication", Icons.Default.Medication, PrimaryBlue),
+                        Triple("Sleep", Icons.Default.Bed, SecondaryGreen),
+                        Triple("Hydration", Icons.Default.LocalDrink, PrimaryBlue),
+                        Triple("Exercise", Icons.Default.FitnessCenter, SecondaryGreen),
+                        Triple("Depositions", Icons.Default.MusicNote, Color.Gray)
+                    )
 
-                // Esquerra: Exercise
-                ActivityBubble(
-                    text = "Exercise",
-                    icon = Icons.Default.FitnessCenter,
-                    color = PrimaryBlue,
-                    offsetX = (-100).dp, offsetY = (-20).dp,
-                    onClick = { onActivityClick("exercise") }
-                )
+                    val radius = 130.dp // Mida del cercle (radi)
 
-                // Dreta: Eating
-                ActivityBubble(
-                    text = "Eating",
-                    icon = Icons.Default.Restaurant, // O RiceBowl
-                    color = SecondaryGreen,
-                    offsetX = 100.dp, offsetY = (-20).dp,
-                    onClick = { onActivityClick("eating") }
-                )
+                    // Bucle per crear cada bombolla en la posició exacta del cercle
+                    items.forEachIndexed { index, item ->
+                        // Calculem l'angle. -PI/2 fa que el primer ítem comenci a dalt de tot (les 12h)
+                        val angleRad = (2 * Math.PI * index / items.size) - (Math.PI / 2)
 
-                // A sota Esquerra (Blanc): Deposicions
-                ActivityBubble(
-                    text = "Depositions",
-                    icon = Icons.Default.MusicNote,
-                    color = Color.White,
-                    textColor = Color.Black,
-                    offsetX = (-110).dp, offsetY = 100.dp,
-                    onClick = { onActivityClick("depositions") }
-                )
+                        // Matemàtiques per trobar la X i la Y
+                        val xOffset = (radius.value * cos(angleRad)).dp
+                        val yOffset = (radius.value * sin(angleRad)).dp
 
-                // A sota Dreta (Blanc): Medication
-                ActivityBubble(
-                    text = "Medication",
-                    icon = Icons.Default.Medication,
-                    color = Color.White,
-                    textColor = Color.Black,
-                    offsetX = 110.dp, offsetY = 100.dp,
-                    onClick = { onActivityClick("medication") }
-                )
+                        ActivityBubble(
+                            text = item.first,
+                            icon = item.second,
+                            color = item.third,
+                            modifier = Modifier.offset(x = xOffset, y = yOffset),
+                            onClick = { onActivityClick(item.first.lowercase()) }
+                        )
+                    }
 
-                // A baix Centre-Esquerra: Sleep
-                ActivityBubble(
-                    text = "Sleep",
-                    icon = Icons.Default.Bed,
-                    color = SecondaryGreen,
-                    offsetX = (-40).dp, offsetY = 200.dp,
-                    onClick = { onActivityClick("sleep") }
-                )
-
-                // A baix Centre-Dreta: Hydration
-                ActivityBubble(
-                    text = "Hydration",
-                    icon = Icons.Default.LocalDrink,
-                    color = PrimaryBlue,
-                    offsetX = 60.dp, offsetY = 210.dp,
-                    onClick = { onActivityClick("hydration") }
-                )
+                    // (Opcional) Icona central decorativa fantasma
+                    Icon(
+                        imageVector = Icons.Default.MonitorHeart,
+                        contentDescription = null,
+                        tint = PrimaryBlue.copy(alpha = 0.1f),
+                        modifier = Modifier.size(100.dp)
+                    )
+                }
             }
         }
     }
 }
 
-// --- COMPONENTS REUTILITZABLES ---
+// --- COMPONENTS AUXILIARS ---
 
 @Composable
 fun HeaderPacient() {
     val pacient = SingletonApp.getInstance().pacientActual
     val nomAMostrar = pacient?.email ?: "Pacient"
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(24.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Icona del cor al quadrat (Logo)
         Surface(
-            shape = RoundedCornerShape(8.dp),
+            shape = RoundedCornerShape(12.dp), // Una mica més arrodonit
             color = PrimaryBlue,
-            modifier = Modifier.size(40.dp)
+            modifier = Modifier.size(48.dp).shadow(4.dp, RoundedCornerShape(12.dp))
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
@@ -164,48 +147,43 @@ fun HeaderPacient() {
             }
         }
         Spacer(modifier = Modifier.width(16.dp))
-        Column{
+        Column {
             Text(
                 text = "Hola, $nomAMostrar",
-                fontSize = 20.sp,
+                fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
                 color = TextGrey
             )
             Text(
-                text = "Patient Home",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = TextGrey
+                text = "Com et trobes avui?",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Normal,
+                color = TextGrey.copy(alpha = 0.8f)
             )
         }
     }
 }
 
-
-// --- VERSIÓ CORRECTA SEGONS FOTO (TEXT DINS) ---
 @Composable
 fun ActivityBubble(
     text: String,
     icon: ImageVector,
     color: Color,
-    textColor: Color = Color.White, // Per defecte blanc
-    offsetX: Dp,
-    offsetY: Dp,
-    size: Dp = 90.dp, // Una mica més petit per no xocar
+    modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
+    // Botó rodó amb ombra i estil
     Surface(
-        modifier = Modifier
-            .offset(x = offsetX, y = offsetY)
-            .size(size)
+        modifier = modifier
+            .size(85.dp) // Mida de la bombolla
             .shadow(
-                elevation = 10.dp,
+                elevation = 8.dp,
                 shape = CircleShape,
-                spotColor = Color(0xFF000000).copy(alpha = 0.1f)
-            )
-            .clickable { onClick() },
+                spotColor = color.copy(alpha = 0.4f) // L'ombra té un toc del color del botó
+            ),
         shape = CircleShape,
-        color = color
+        color = color,
+        onClick = onClick // Fa l'efecte "ripple" en clicar
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -214,15 +192,15 @@ fun ActivityBubble(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = if (color == Color.White) Color.Black else Color.White,
+                tint = Color.White,
                 modifier = Modifier.size(28.dp)
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = text,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = if (color == Color.White) Color.Black else Color.White
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
             )
         }
     }
@@ -238,17 +216,20 @@ fun BottomNavigationBar(
     Surface(
         color = Color.White,
         modifier = Modifier.fillMaxWidth(),
-        shadowElevation = 8.dp
+        shadowElevation = 16.dp // Més ombra per separar-ho del fons
     ) {
-        // Línia groga (simulada amb un Box a dalt)
         Box {
-            // La línia groga
+            // Línia de color superior
             Box(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .fillMaxWidth()
-                    .height(2.dp)
-                    .background(Color(0xFFFDD835)) // Groc
+                    .height(3.dp)
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(PrimaryBlue, SecondaryGreen)
+                        )
+                    )
             )
 
             Row(
@@ -283,16 +264,27 @@ fun BottomNavigationBar(
 @Composable
 fun BottomNavItem(icon: ImageVector, label: String, isSelected: Boolean, onClick: () -> Unit) {
     val color = if (isSelected) PrimaryBlue else Color.Gray
+    val scale = if (isSelected) 1.1f else 1.0f // Petit efecte d'escala si està seleccionat
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.clickable { onClick() }
+        modifier = Modifier
+            .clickable { onClick() }
+            .padding(8.dp)
     ) {
-        Icon(imageVector = icon, contentDescription = label, tint = color)
-        Text(
-            text = label,
-            fontSize = 10.sp,
-            color = color,
-            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+        Icon(
+            imageVector = icon,
+            contentDescription = label,
+            tint = color,
+            modifier = Modifier.size(24.dp * scale)
         )
+        if (isSelected) {
+            Text(
+                text = label,
+                fontSize = 10.sp,
+                color = color,
+                fontWeight = FontWeight.Bold
+            )
+        }
     }
 }

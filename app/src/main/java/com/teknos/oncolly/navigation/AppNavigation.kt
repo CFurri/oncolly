@@ -114,25 +114,21 @@ fun AppNavigation() {
 
         composable("patient_activities_list") {
             // 1. Instanciem el ViewModel
-            // Si aquí et surt vermell, assegura't de tenir l'import: androidx.lifecycle.viewmodel.compose.viewModel
             val viewModel: ActivitiesViewModel = viewModel()
 
-            // 2. Estructura amb Scaffold
-            Scaffold(
-                bottomBar = {
-                    BottomNavigationBar(
-                        currentTab = 1,
-                        onNavigateToHome = { navController.navigate("home_pacient") { popUpTo("home_pacient") { inclusive = true } } },
-                        onNavigateToActivities = {},
-                        onNavigateToProfile = { navController.navigate("profile_pacient") }
-                    )
+            // 2. Cridem la pantalla directament
+            // NO posis cap Scaffold aquí, perquè la pantalla ja en porta un a dins!
+            PatientActivitiesScreen(
+                viewModel = viewModel,
+                onNavigateToHome = {
+                    navController.navigate("home_pacient") {
+                        popUpTo("home_pacient") { inclusive = true }
+                    }
+                },
+                onNavigateToProfile = {
+                    navController.navigate("profile_pacient")
                 }
-            ) { paddingValues ->
-                // 3. Contingut
-                Box(modifier = Modifier.padding(paddingValues)) {
-                    PatientActivitiesScreen(viewModel = viewModel)
-                }
-            }
+            )
         }
 
         composable("profile_pacient") {

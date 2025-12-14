@@ -18,17 +18,25 @@ class ActivitiesViewModel : ViewModel() {
     fun loadActivities() {
         val app = SingletonApp.getInstance()
         val token = "Bearer ${app.userToken}"
-        val patientId = app.userId ?: return // Si no hi ha ID, no fem res
 
         viewModelScope.launch {
             try {
                 isLoading = true
-                val response = app.api.getActivities(token, patientId)
+                val response = app.api.getMyActivities(token)
                 if (response.isSuccessful && response.body() != null) {
                     activities.clear()
-                    activities.addAll(response.body()!!)
+
+                    // 1. Agafem la llista que ve del servidor
+                    val llistaDelServidor = response.body()!!
+
+                    // 2. L'ordenem per data (occurredAt) de MÉS NOVA a MÉS VELLA (Descending)
+                    val llistaOrdenada = llistaDelServidor.sortedByDescending { it.occurredAt }
+
+                    // 3. L'afegim a la llista de la pantalla
+                    activities.addAll(llistaOrdenada)
                 } else {
                     errorMessage = "Error carregant: ${response.code()}"
+                    println("Error body: ${response.errorBody()?.string()}")
                 }
             } catch (e: Exception) {
                 errorMessage = "Error de connexió: ${e.message}"

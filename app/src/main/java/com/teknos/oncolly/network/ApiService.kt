@@ -5,6 +5,7 @@ import com.teknos.oncolly.entity.CreateActivityRequest
 import com.teknos.oncolly.entity.Pacient
 import com.teknos.oncolly.entity.Appointment
 import com.teknos.oncolly.entity.CreateAppointmentRequest
+import com.teknos.oncolly.entity.Doctor
 import retrofit2.Response
 
 import retrofit2.http.Body
@@ -23,17 +24,24 @@ interface ApiService {
         @Header("Authorization") token: String
     ): Response<List<Pacient>>
 
-    // --- GUARDAR ACTIVITATS ---
+    // --- GUARDAR ACTIVITATS (Pacient activitats)---
     @POST("api/activities")
     suspend fun createActivity(
         @Header("Authorization") token: String,
         @Body request: CreateActivityRequest
     ): Response<Void>
 
+    // --- PEL PACIENT --> permet veure les seves propies activitats ---
+    @GET("api/activities")
+    suspend fun getMyActivities(
+        @Header("Authorization") token: String
+    ): Response<List<Activity>>
+
+    // --- Per al Doctor --> Permet veure les activitats del pacient que vulgui ---
     @GET("/api/patients/{patientId}/activities")
     suspend fun getActivities(
         @Header("Authorization") token: String,
-        @Path("patientId") patientId: String // <--- AFEGEIX AIXÒ
+        @Path("patientId") patientId: String
     ): Response<List<Activity>>
 
     // --- APPOINTMENTS (Doctor agenda) ---
@@ -53,4 +61,24 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Path("appointmentId") appointmentId: String
     ): Response<Void>
+
+    // Per obtenir les dades del pacient actual (necessari per omplir el Singleton)
+    @GET("api/patients/{id}")
+    suspend fun getPacientProfile(
+        @Header("Authorization") token: String,
+        @Path("id") id: String
+    ): Response<Pacient>
+
+    // Per obtenir les dades del doctor i omplir el Singleton ---@GET("api/doctors/{id}")
+    suspend fun getDoctorProfile(
+        @Header("Authorization") token: String,
+        @Path("id") id: String
+    ): Response<Doctor>
+
+    // --- DELETE Activity (pacient) ---
+    @DELETE("api/activities/{id}")
+    suspend fun deleteActivity(
+        @Header("Authorization") token: String,
+        @Path("id") id: String
+    ) : Response<Void>
 }

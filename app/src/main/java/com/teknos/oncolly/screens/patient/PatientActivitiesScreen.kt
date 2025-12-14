@@ -47,7 +47,7 @@ fun PatientActivitiesScreen(
 
     Scaffold(
         bottomBar = {
-            // Reutilitzem la barra que tenim a PacientScreen.kt
+            // Reutilitzem la barra que tenim a PatientScreen.kt
             // (Assegura't que BottomNavigationBar sigui accessible o copia-la aquí també si la tens privata)
             BottomNavigationBar(
                 currentTab = 1, // Pestanya del mig activa

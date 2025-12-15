@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Sick
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.SelfImprovement
+import androidx.compose.material.icons.filled.Wc
 
 enum class ActivityType(
     val id: String,
@@ -18,7 +19,7 @@ enum class ActivityType(
     val icon: ImageVector,
     val color: Color,
     val inputType: InputType,
-    val labelInput: String // <--- Afegeixo això per personalitzar el text del camp (ex: "Minuts" vs "Litres")
+    val labelInput: String // <--- Per personalitzar el text del camp
 ) {
     // 1. WALKING (Minuts o Passos) -> Numèric
     WALKING("walking", "Caminar", Icons.Default.DirectionsWalk, Color(0xFF259DF4), InputType.NUMBER, "Minuts caminant"),
@@ -29,8 +30,8 @@ enum class ActivityType(
     // 3. EATING (Què has menjat?) -> Text llarg
     EATING("eating", "Alimentació", Icons.Default.Restaurant, Color(0xFF66BB6A), InputType.TEXT_AREA, "Descriu el teu àpat"),
 
-    // 4. MEDITATION (Minuts) -> Numèric
-    MEDITATION("meditation", "Meditació", Icons.Default.SelfImprovement, Color(0xFF565D6D), InputType.NUMBER, "Minuts de meditació"),
+    // 4. DEPOSITIONS (Bé?) -> Boolean
+    MEDITATION("depositions", "Deposicions", Icons.Default.Wc, Color(0xFF565D6D), InputType.BOOLEAN, "Ha anat bé?"),
 
     // 5. MEDICATION (Nom medicament) -> Text
     MEDICATION("medication", "Medicació", Icons.Default.Medication, Color(0xFF565D6D), InputType.TEXT, "Medicament pres"),

@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -48,7 +49,7 @@ fun LoginScreen(onLoginSuccess: (String) -> Unit) {
     // FUNCTION TO PERFORM LOGIN
     fun performLogin(u: String, p: String) {
         if (u.isBlank() || p.isBlank()) {
-            missatgeError = "Omple tots els camps"
+            missatgeError = context.getString(R.string.omple_tots_els_camps)
             return
         }
         isLoading = true
@@ -89,10 +90,10 @@ fun LoginScreen(onLoginSuccess: (String) -> Unit) {
                         }
                     }
                 } else {
-                    missatgeError = "Credencials incorrectes"
+                    missatgeError = context.getString(R.string.credencials_incorrectes_login)
                 }
             } catch (e: Exception) {
-                missatgeError = "Error de connexió: ${e.message}"
+                missatgeError = context.getString(R.string.error_de_connexio_login, e.message)
             } finally {
                 isLoading = false
             }
@@ -157,14 +158,14 @@ fun LoginScreen(onLoginSuccess: (String) -> Unit) {
             Spacer(modifier = Modifier.height(24.dp))
 
             Text(
-                text = "Benvingut a Oncolly",
+                text = stringResource(R.string.benvingut_a_oncolly),
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
                 color = TextPrimary
             )
 
             Text(
-                text = "La teva salut, la nostra prioritat",
+                text = stringResource(R.string.la_teva_salut_la_nostra_prioritat_login),
                 fontSize = 14.sp,
                 color = TextSecondary
             )
@@ -175,7 +176,7 @@ fun LoginScreen(onLoginSuccess: (String) -> Unit) {
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it; missatgeError = null },
-                label = { Text("Correu electrònic") },
+                label = { Text(stringResource(R.string.correu_electronic)) },
                 leadingIcon = { Icon(Icons.Outlined.Email, null, tint = PrimaryBlue) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
@@ -195,7 +196,7 @@ fun LoginScreen(onLoginSuccess: (String) -> Unit) {
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it; missatgeError = null },
-                label = { Text("Contrasenya") },
+                label = { Text(stringResource(R.string.contrasenya_login)) },
                 leadingIcon = { Icon(Icons.Outlined.Lock, null, tint = PrimaryBlue) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
@@ -238,7 +239,7 @@ fun LoginScreen(onLoginSuccess: (String) -> Unit) {
                 if (isLoading) {
                     CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                 } else {
-                    Text(text = "Iniciar Sessió", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text(text = stringResource(R.string.iniciar_sessio_login_button), fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }

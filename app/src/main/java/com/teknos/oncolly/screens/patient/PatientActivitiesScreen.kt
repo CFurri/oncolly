@@ -18,12 +18,16 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.teknos.oncolly.R
 import com.teknos.oncolly.entity.Activity
+import com.teknos.oncolly.screens.doctor.PrimaryBlue
+import com.teknos.oncolly.screens.doctor.TextGrey
 import com.teknos.oncolly.viewmodel.ActivitiesViewModel
 
 
@@ -71,7 +75,7 @@ fun PatientActivitiesScreen(
             ) {
                 // Títol gran
                 Text(
-                    text = "Historial d'Activitats",
+                    text = stringResource(R.string.historial_d_activitats_patientActivitiesScreen),
                     style = MaterialTheme.typography.headlineSmall,
                     color = TextGrey,
                     fontWeight = FontWeight.Bold,
@@ -136,7 +140,9 @@ fun ActivityItem(activity: Activity, onDeleteClick: () -> Unit) {
             // 2. Textos (Centre)
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = activity.activityType?.replaceFirstChar { it.uppercase() } ?: "Activitat",
+                    text = activity.activityType?.replaceFirstChar { it.uppercase() } ?: stringResource(
+                        R.string.activitat_patientActivitiesScreen
+                    ),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = TextGrey
@@ -161,7 +167,7 @@ fun ActivityItem(activity: Activity, onDeleteClick: () -> Unit) {
             IconButton(onClick = onDeleteClick) {
                 Icon(
                     imageVector = Icons.Outlined.Delete,
-                    contentDescription = "Esborrar",
+                    contentDescription = stringResource(R.string.esborrar_patientActivitiesScreen),
                     tint = Color(0xFFFF6B6B) // Un vermell suau
                 )
             }
@@ -183,7 +189,7 @@ fun EmptyState() {
             modifier = Modifier.size(80.dp)
         )
         Spacer(modifier = Modifier.height(16.dp))
-        Text("Encara no tens activitats", color = Color.Gray)
+        Text(stringResource(R.string.encara_no_tens_activitats_patientActivitiesScreen), color = Color.Gray)
     }
 }
 
@@ -197,7 +203,7 @@ fun getActivityVisuals(type: String): Pair<ImageVector, Color> {
         "sleep" -> Pair(Icons.Default.Bed, SecondaryGreen)
         "hydration" -> Pair(Icons.Default.LocalDrink, PrimaryBlue)
         "medication" -> Pair(Icons.Default.Medication, PrimaryBlue)
-        "depositions" -> Pair(Icons.Default.MusicNote, Color.Gray)
+        "depositions" -> Pair(Icons.Default.Wc, Color.Gray)
         else -> Pair(Icons.Default.Assignment, PrimaryBlue) // Per defecte
     }
 }

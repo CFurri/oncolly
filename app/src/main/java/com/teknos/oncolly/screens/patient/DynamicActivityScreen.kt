@@ -20,10 +20,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.teknos.oncolly.R
 
 // Imports del teu projecte (ViewModel i Tipus)
 import com.teknos.oncolly.viewmodel.PatientViewModel
@@ -80,7 +82,9 @@ fun DynamicActivityScreen(
                         value = valorInput,
                         onValueChange = { valorInput = it },
                         label = { Text(activityType.labelInput) },
-                        modifier = Modifier.fillMaxWidth().height(150.dp), // Més alt
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(150.dp), // Més alt
                         maxLines = 5
                     )
                 }
@@ -100,11 +104,13 @@ fun DynamicActivityScreen(
                     // Enviem el valor tal qual l'hem capturat
                     viewModel.guardarActivitat(activityType.id, valorInput, onSuccess = onBack, onError = {})
                 },
-                modifier = Modifier.fillMaxWidth().height(50.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = activityType.color),
                 enabled = valorInput.isNotEmpty() // Deshabilitem si està buit
             ) {
-                Text("Guardar Registre")
+                Text(stringResource(R.string.guardar_registre_dynamicActivityScreen))
             }
         }
     }

@@ -23,11 +23,14 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.teknos.oncolly.R
 import com.teknos.oncolly.entity.UpdatePatientRequest
+import com.teknos.oncolly.screens.doctor.PrimaryBlue
 import com.teknos.oncolly.singletons.SingletonApp
 import kotlinx.coroutines.launch
 
@@ -114,12 +117,14 @@ fun ProfileScreen(
                                         phoneNumber = telefon,
                                         dateOfBirth = dataNaixement
                                     )
-                                    android.widget.Toast.makeText(context, "Perfil actualitzat", android.widget.Toast.LENGTH_SHORT).show()
+                                    android.widget.Toast.makeText(context,
+                                        context.getString(R.string.perfil_actualitzat_ProfileScreen), android.widget.Toast.LENGTH_SHORT).show()
                                 } else {
                                     android.widget.Toast.makeText(context, "Error: ${resp.code()}", android.widget.Toast.LENGTH_SHORT).show()
                                 }
                             } catch(e: Exception) {
-                                android.widget.Toast.makeText(context, "Error connexió", android.widget.Toast.LENGTH_SHORT).show()
+                                android.widget.Toast.makeText(context,
+                                    context.getString(R.string.error_connexio_ProfileScreen), android.widget.Toast.LENGTH_SHORT).show()
                             }
                         }
                     } else {
@@ -154,7 +159,9 @@ fun ProfileScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = if (isEditing) "Editant Perfil" else "El meu Perfil",
+                    text = if (isEditing) stringResource(R.string.editant_perfil_ProfileScreen) else stringResource(
+                        R.string.el_meu_perfil_ProfileScreen
+                    ),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     color = TextGrey
@@ -166,11 +173,15 @@ fun ProfileScreen(
                 Surface(
                     shape = CircleShape,
                     color = Color.White,
-                    modifier = Modifier.size(120.dp).shadow(10.dp, CircleShape)
+                    modifier = Modifier
+                        .size(120.dp)
+                        .shadow(10.dp, CircleShape)
                 ) {
                     Box(
                         contentAlignment = Alignment.Center,
-                        modifier = Modifier.fillMaxSize().background(PrimaryBlue.copy(alpha = 0.1f))
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(PrimaryBlue.copy(alpha = 0.1f))
                     ) {
                         Text(
                             text = if (firstName.isNotEmpty()) firstName.first().toString().uppercase() else "P",
@@ -195,7 +206,7 @@ fun ProfileScreen(
                         EditableProfileItem(
                             isEditing = isEditing,
                             icon = Icons.Default.Person,
-                            label = "Nom",
+                            label = stringResource(R.string.nom_ProfileScreen),
                             value = firstName,
                             onValueChange = { firstName = it }
                         )
@@ -204,7 +215,7 @@ fun ProfileScreen(
                         EditableProfileItem(
                             isEditing = isEditing,
                             icon = Icons.Default.Person,
-                            label = "Cognom",
+                            label = stringResource(R.string.cognom_ProfileScreen),
                             value = lastName,
                             onValueChange = { lastName = it }
                         )
@@ -213,7 +224,7 @@ fun ProfileScreen(
                         EditableProfileItem(
                             isEditing = isEditing,
                             icon = Icons.Default.Email,
-                            label = "Correu Electrònic",
+                            label = stringResource(R.string.correu_electr_nic_ProfileScreen),
                             value = email,
                             onValueChange = { email = it }
                         )
@@ -222,7 +233,7 @@ fun ProfileScreen(
                         EditableProfileItem(
                             isEditing = isEditing,
                             icon = Icons.Default.Phone,
-                            label = "Telèfon",
+                            label = stringResource(R.string.tel_fon_ProfileScreen),
                             value = telefon,
                             onValueChange = { telefon = it },
                             keyboardType = KeyboardType.Phone
@@ -232,7 +243,7 @@ fun ProfileScreen(
                         EditableProfileItem(
                             isEditing = isEditing,
                             icon = Icons.Default.Today,
-                            label = "Data de Naixement",
+                            label = stringResource(R.string.data_de_naixement_ProfileScreen),
                             value = dataNaixement,
                             onValueChange = { dataNaixement = it }
                         )
@@ -249,17 +260,16 @@ fun ProfileScreen(
                             SingletonApp.getInstance().tancarSessio()
                             onLogout()
                         },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = BackgroundRed,
-                            contentColor = Color.Red
-                        ),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF5252).copy(alpha = 0.9f)),
                         shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
                         elevation = ButtonDefaults.buttonElevation(0.dp)
                     ) {
                         Icon(Icons.Default.ExitToApp, contentDescription = null)
                         Spacer(modifier = Modifier.width(12.dp))
-                        Text("Tancar Sessió", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text(stringResource(R.string.tancar_sessio_ProfileScreen), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     }
                 }
             }
@@ -279,7 +289,9 @@ fun EditableProfileItem(
     keyboardType: KeyboardType = KeyboardType.Text
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Icona
@@ -314,7 +326,7 @@ fun EditableProfileItem(
             } else {
                 // VERSIÓ LECTURA
                 Text(
-                    text = value.ifBlank { "No definit" },
+                    text = value.ifBlank { stringResource(R.string.no_definit_profilescreen) },
                     style = MaterialTheme.typography.bodyLarge,
                     color = TextGrey,
                     fontWeight = FontWeight.SemiBold,

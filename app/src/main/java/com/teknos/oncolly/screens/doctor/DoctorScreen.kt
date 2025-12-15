@@ -22,10 +22,12 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.teknos.oncolly.R
 import com.teknos.oncolly.entity.Appointment
 import com.teknos.oncolly.entity.Pacient
 import com.teknos.oncolly.singletons.SingletonApp
@@ -93,7 +95,9 @@ fun DoctorScreen(
             }
         }
     ) { paddingValues ->
-        Box(modifier = Modifier.padding(paddingValues).fillMaxSize()) {
+        Box(modifier = Modifier
+            .padding(paddingValues)
+            .fillMaxSize()) {
             
             // ANIMATED CONTENT FOR TABS
             AnimatedContent(
@@ -241,14 +245,14 @@ fun PantallaLlistaPacients(
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        Text("Pacients", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = TextDark)
+        Text(stringResource(R.string.pacients_title_DoctorScreen), fontSize = 28.sp, fontWeight = FontWeight.Bold, color = TextDark)
         Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(
             value = textBuscador,
             onValueChange = { textBuscador = it },
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("Buscar per nom o email...", color = TextGrey) },
+            placeholder = { Text(stringResource(R.string.buscar_per_nom_o_email_DoctorScreen), color = TextGrey) },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Buscar", tint = TextGrey) },
             singleLine = true,
             shape = RoundedCornerShape(12.dp),
@@ -328,16 +332,20 @@ fun ItemPacientDisseny(pacient: Pacient, onClick: (String) -> Unit, onDelete: (S
     if (showDeleteConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
-            title = { Text("Eliminar Pacient") },
-            text = { Text("Estàs segur que vols eliminar a ${pacient.firstName}?") },
+            title = { Text(stringResource(R.string.eliminar_pacient_DoctorScreen)) },
+            text = { Text(
+                stringResource(
+                    R.string.est_s_segur_que_vols_eliminar__DoctorScreen,
+                    pacient.firstName
+                )) },
             confirmButton = {
                 TextButton(onClick = { 
                     onDelete(pacient.id)
                     showDeleteConfirm = false
-                }) { Text("Eliminar", color = Color.Red) }
+                }) { Text(stringResource(R.string.eliminar_button_DoctorScreen), color = Color.Red) }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancel·lar") }
+                TextButton(onClick = { showDeleteConfirm = false }) { Text(stringResource(R.string.cancel_lar_button__DoctorScreen)) }
             },
             containerColor = Color.White
         )
@@ -378,7 +386,7 @@ fun AgendaScreen(
             ExtendedFloatingActionButton(
                 onClick = { showSheet = true },
                 icon = { Icon(Icons.Default.EditCalendar, contentDescription = null) },
-                text = { Text("Nova Cita") },
+                text = { Text(stringResource(R.string.nova_cita_DoctorScreen)) },
                 containerColor = SecondaryGreen,
                 contentColor = Color.White
             )
@@ -397,7 +405,7 @@ fun AgendaScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Agenda", fontWeight = FontWeight.Bold, fontSize = 28.sp, color = TextDark)
+                Text(stringResource(R.string.agenda_title__DoctorScreen), fontWeight = FontWeight.Bold, fontSize = 28.sp, color = TextDark)
                 IconButton(onClick = onReload) {
                     Icon(Icons.Default.Refresh, contentDescription = "Refrescar", tint = PrimaryBlue)
                 }
@@ -409,7 +417,7 @@ fun AgendaScreen(
                 }
             } else if (state.appointments.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Sense cites programades.", color = TextGrey)
+                    Text(stringResource(R.string.sense_cites_programades_DoctorScreen), color = TextGrey)
                 }
             } else {
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(bottom = 80.dp)) {
@@ -584,8 +592,10 @@ private fun AppointmentSheet(
                     value = selectedPatientName,
                     onValueChange = {},
                     readOnly = true,
-                    modifier = Modifier.fillMaxWidth().clickable { patientMenuExpanded = true },
-                    label = { Text("Pacient") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { patientMenuExpanded = true },
+                    label = { Text(stringResource(R.string.pacient_DoctorScreen)) },
                     trailingIcon = { Icon(Icons.Default.ArrowDropDown, contentDescription = null) },
                     enabled = false, 
                     colors = OutlinedTextFieldDefaults.colors(
@@ -595,19 +605,26 @@ private fun AppointmentSheet(
                         disabledTrailingIconColor = TextGrey
                     )
                 )
-                Box(modifier = Modifier.matchParentSize().clickable { patientMenuExpanded = true })
+                Box(modifier = Modifier
+                    .matchParentSize()
+                    .clickable { patientMenuExpanded = true })
                 
                 DropdownMenu(
                     expanded = patientMenuExpanded,
                     onDismissRequest = { patientMenuExpanded = false },
-                    modifier = Modifier.fillMaxWidth(0.9f).heightIn(max = 300.dp).background(Color.White)
+                    modifier = Modifier
+                        .fillMaxWidth(0.9f)
+                        .heightIn(max = 300.dp)
+                        .background(Color.White)
                 ) {
                     // Search Bar dins del menú
                     OutlinedTextField(
                         value = searchText,
                         onValueChange = { searchText = it },
-                        placeholder = { Text("Buscar...") },
-                        modifier = Modifier.fillMaxWidth().padding(8.dp),
+                        placeholder = { Text(stringResource(R.string.buscar_DoctorScreen)) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp),
                         singleLine = true
                     )
                     
@@ -616,7 +633,7 @@ private fun AppointmentSheet(
                     }
                     
                     if (filteredPatients.isEmpty()) {
-                        DropdownMenuItem(text = { Text("Cap resultat", color = TextGrey) }, onClick = {})
+                        DropdownMenuItem(text = { Text(stringResource(R.string.cap_resultat_DoctorScreen), color = TextGrey) }, onClick = {})
                     } else {
                         filteredPatients.forEach { pacient ->
                             DropdownMenuItem(
@@ -640,17 +657,21 @@ private fun AppointmentSheet(
             OutlinedTextField(
                 value = title,
                 onValueChange = onTitleChange,
-                label = { Text("Títol") },
+                label = { Text(stringResource(R.string.t_tol_DoctorScreen)) },
                 modifier = Modifier.fillMaxWidth()
             )
 
             // Data i Hora
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Box(modifier = Modifier.weight(1f).clickable { showStartDatePicker = true }) {
+                Box(modifier = Modifier
+                    .weight(1f)
+                    .clickable { showStartDatePicker = true }) {
                     OutlinedTextField(
                         value = dateFormatter.format(startTime),
                         onValueChange = {},
-                        label = { Text("Dia") },
+                        label = { Text(
+                            stringResource(R.string.diaDiaa_DoctorScreen) +
+                                "a") },
                         readOnly = true,
                         enabled = false,
                         leadingIcon = { Icon(Icons.Default.DateRange, null) },
@@ -660,11 +681,13 @@ private fun AppointmentSheet(
                         )
                     )
                 }
-                Box(modifier = Modifier.weight(1f).clickable { showStartTimePicker = true }) {
+                Box(modifier = Modifier
+                    .weight(1f)
+                    .clickable { showStartTimePicker = true }) {
                     OutlinedTextField(
                         value = timeFormatter.format(startTime),
                         onValueChange = {},
-                        label = { Text("Hora") },
+                        label = { Text(stringResource(R.string.hora_DoctorScreen)) },
                         readOnly = true,
                         enabled = false,
                         leadingIcon = { Icon(Icons.Default.Schedule, null) },
@@ -680,14 +703,19 @@ private fun AppointmentSheet(
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth().background(BgLight, RoundedCornerShape(8.dp)).padding(12.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(BgLight, RoundedCornerShape(8.dp))
+                    .padding(12.dp)
             ) {
-                Text("Durada (min)", color = TextGrey, fontWeight = FontWeight.Medium)
+                Text(stringResource(R.string.durada_min_DoctorScreen), color = TextGrey, fontWeight = FontWeight.Medium)
                 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(
                         onClick = { if (durationMinutes > 15) onDurationChange(durationMinutes - 15) },
-                        modifier = Modifier.size(32.dp).background(Color.White, CircleShape)
+                        modifier = Modifier
+                            .size(32.dp)
+                            .background(Color.White, CircleShape)
                     ) {
                         Icon(Icons.Default.Remove, null, tint = PrimaryBlue)
                     }
@@ -700,7 +728,9 @@ private fun AppointmentSheet(
                     )
                     IconButton(
                         onClick = { onDurationChange(durationMinutes + 15) },
-                        modifier = Modifier.size(32.dp).background(Color.White, CircleShape)
+                        modifier = Modifier
+                            .size(32.dp)
+                            .background(Color.White, CircleShape)
                     ) {
                         Icon(Icons.Default.Add, null, tint = PrimaryBlue)
                     }
@@ -710,7 +740,7 @@ private fun AppointmentSheet(
             OutlinedTextField(
                 value = notes,
                 onValueChange = onNotesChange,
-                label = { Text("Notes (opcional)") },
+                label = { Text(stringResource(R.string.notes_opcional_DoctorScreen)) },
                 modifier = Modifier.fillMaxWidth(),
                 maxLines = 3
             )
@@ -718,10 +748,12 @@ private fun AppointmentSheet(
             Button(
                 onClick = onSubmit,
                 colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
-                modifier = Modifier.fillMaxWidth().height(50.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text("Guardar Cita", fontSize = 16.sp)
+                Text(stringResource(R.string.guardar_cita_DoctorScreen), fontSize = 16.sp)
             }
             
             Spacer(modifier = Modifier.height(24.dp))
@@ -740,7 +772,9 @@ private fun AppointmentSheet(
                     showStartDatePicker = false
                 }) { Text("OK", color = PrimaryBlue) }
             },
-            dismissButton = { TextButton(onClick = { showStartDatePicker = false }) { Text("Cancel") } }
+            dismissButton = { TextButton(onClick = { showStartDatePicker = false }) { Text(
+                stringResource(R.string.cancel_DoctorScreen)
+            ) } }
         ) {
             DatePicker(state = startDateState)
         }
@@ -783,17 +817,21 @@ fun AddPatientDialog(
     AlertDialog(
         containerColor = Color.White,
         onDismissRequest = onDismiss,
-        title = { Text("Nou Pacient", fontWeight = FontWeight.Bold, color = TextDark) },
+        title = { Text(stringResource(R.string.nou_pacient_DoctorScreen), fontWeight = FontWeight.Bold, color = TextDark) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(
-                        value = firstName, onValueChange = { firstName = it }, label = { Text("Nom") },
+                        value = firstName, onValueChange = { firstName = it }, label = { Text(
+                            stringResource(R.string.nom_DoctorScreen)
+                        ) },
                         singleLine = true, modifier = Modifier.weight(1f),
                         colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PrimaryBlue, focusedLabelColor = PrimaryBlue)
                     )
                     OutlinedTextField(
-                        value = lastName, onValueChange = { lastName = it }, label = { Text("Cognom") },
+                        value = lastName, onValueChange = { lastName = it }, label = { Text(
+                            stringResource(R.string.cognom_DoctorScreen)
+                        ) },
                         singleLine = true, modifier = Modifier.weight(1f),
                         colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PrimaryBlue, focusedLabelColor = PrimaryBlue)
                     )
@@ -801,7 +839,7 @@ fun AddPatientDialog(
                 OutlinedTextField(
                     value = email, 
                     onValueChange = { email = it }, 
-                    label = { Text("Email") },
+                    label = { Text(stringResource(R.string.email_DoctorScreen)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -811,7 +849,7 @@ fun AddPatientDialog(
                 OutlinedTextField(
                     value = password, 
                     onValueChange = { password = it }, 
-                    label = { Text("Password") },
+                    label = { Text(stringResource(R.string.password_DoctorScreen)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -821,7 +859,7 @@ fun AddPatientDialog(
                 OutlinedTextField(
                     value = phone, 
                     onValueChange = { phone = it }, 
-                    label = { Text("Telèfon") },
+                    label = { Text(stringResource(R.string.tel_fon_DoctorScreen)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -829,11 +867,13 @@ fun AddPatientDialog(
                     )
                 )
                 
-                Box(modifier = Modifier.fillMaxWidth().clickable { showDatePicker = true }) {
+                Box(modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { showDatePicker = true }) {
                     OutlinedTextField(
                         value = dob.format(DateTimeFormatter.ISO_LOCAL_DATE),
                         onValueChange = {},
-                        label = { Text("Data Naixement") },
+                        label = { Text(stringResource(R.string.data_naixement_DoctorScreen)) },
                         readOnly = true,
                         enabled = false,
                         trailingIcon = {
@@ -852,12 +892,12 @@ fun AddPatientDialog(
                 onClick = { onSubmit(firstName, lastName, email, password, phone, dob.format(DateTimeFormatter.ISO_LOCAL_DATE)) },
                 colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
             ) {
-                Text("Crear")
+                Text(stringResource(R.string.crear__DoctorScreen))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel·lar", color = TextGrey)
+                Text(stringResource(R.string.cancel_lar_DoctorScreen), color = TextGrey)
             }
         }
     )
@@ -932,13 +972,13 @@ fun PantallaPerfilDoctor(onLogout: () -> Unit) {
         Spacer(modifier = Modifier.height(16.dp))
         
         Text(
-            text = "${doctor?.firstName ?: "Doctor"} ${doctor?.lastName ?: ""}", 
+            text = "${doctor?.firstName ?: stringResource(R.string.doctor_DoctorScreen)} ${doctor?.lastName ?: ""}",
             fontSize = 24.sp, 
             fontWeight = FontWeight.Bold, 
             color = TextDark
         )
         Text(
-            text = doctor?.specialization ?: "Especialitat desconeguda", 
+            text = doctor?.specialization ?: stringResource(R.string.especialitat_desconeguda_DoctorScreen),
             fontSize = 16.sp, 
             color = SecondaryGreen,
             fontWeight = FontWeight.SemiBold
@@ -955,7 +995,7 @@ fun PantallaPerfilDoctor(onLogout: () -> Unit) {
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF5252).copy(alpha = 0.9f)),
             modifier = Modifier.fillMaxWidth(0.6f)
         ) {
-            Text("Tancar Sessió")
+            Text(stringResource(R.string.tancar_sessio_DoctorScreen))
         }
     }
 }

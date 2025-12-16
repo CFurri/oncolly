@@ -42,9 +42,14 @@ fun SplashScreen(onNavigate: (String) -> Unit) {
                     if (p.isSuccessful) app.pacientActual = p.body()
                     onNavigate("home_pacient")
                 } else {
-                    val d = app.api.getDoctorProfile(tokenBearer, session.userId)
-                    if (d.isSuccessful) app.doctorActual = d.body()
-                    onNavigate("home_doctor")
+                    val d = app.api.getDoctorProfile(tokenBearer)
+                    if (d.isSuccessful) {
+                        app.doctorActual = d.body()
+                        onNavigate("home_doctor")
+                    } else {
+                        SessionManager.clearSession(context)
+                        onNavigate("login")
+                    }
                 }
             } catch (e: Exception) {
                 // If fetch fails, go to login just in case

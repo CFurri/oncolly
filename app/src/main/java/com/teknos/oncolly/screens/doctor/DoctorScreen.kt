@@ -6,8 +6,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.DateRange
@@ -18,14 +21,17 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.widget.Toast
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.teknos.oncolly.R
 import com.teknos.oncolly.entity.Appointment
@@ -961,54 +967,201 @@ private fun LocalDateTime.withDate(date: LocalDate): LocalDateTime =
 
 @Composable
 fun PantallaPerfilDoctor(onLogout: () -> Unit) {
-    val doctor = SingletonApp.getInstance().doctorActual
+    val doctorViewModel: DoctorViewModel = viewModel()
+    val app = SingletonApp.getInstance()
+    val context = LocalContext.current
+    
+    // Local state
+    var firstName by remember { mutableStateOf(app.doctorActual?.firstName ?: "") }
+    var lastName by remember { mutableStateOf(app.doctorActual?.lastName ?: "") }
+    var email by remember { mutableStateOf(app.doctorActual?.email ?: "") }
+    var isEditing by remember { mutableStateOf(false) }
+
+    fun saveProfile() {
+        doctorViewModel.updateDoctorProfile(
+            firstName, lastName, email,
+            onSuccess = {
+                isEditing = false
+                Toast.makeText(context, "Perfil actualitzat correctament", Toast.LENGTH_SHORT).show()
+            },
+            onError = { msg ->
+                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+            }
+        )
+    }
     
     Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Surface(
-            modifier = Modifier.size(100.dp),
-            shape = CircleShape,
-            color = PrimaryBlue.copy(alpha = 0.1f)
+        // --- CAPÇALERA AMB TÍTOL I BOTÓ EDITAR ---
+        Box(
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Box(contentAlignment = Alignment.Center) {
+            Text(
+                text = if (isEditing) "Editant perfil" else "El meu perfil",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = TextGrey,
+                modifier = Modifier.align(Alignment.CenterStart)
+            )
+
+            Surface(
+                onClick = {
+                    if (isEditing) saveProfile() else isEditing = true
+                },
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .size(48.dp)
+                    .shadow(4.dp, RoundedCornerShape(12.dp)),
+                shape = RoundedCornerShape(12.dp),
+                color = if (isEditing) SecondaryGreen else PrimaryBlue
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = if (isEditing) Icons.Default.Check else Icons.Default.Edit,
+                        contentDescription = if (isEditing) "Guardar" else "Editar",
+                        tint = Color.White
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        // Avatar
+        Surface(
+            shape = CircleShape,
+            color = Color.White,
+            modifier = Modifier
+                .size(120.dp)
+                .shadow(10.dp, CircleShape)
+        ) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(PrimaryBlue.copy(alpha = 0.1f))
+            ) {
                 Text(
-                    text = doctor?.firstName?.take(1)?.uppercase() ?: "D",
+                    text = if (firstName.isNotEmpty()) firstName.first().toString().uppercase() else "D",
                     fontSize = 40.sp,
                     fontWeight = FontWeight.Bold,
                     color = PrimaryBlue
                 )
             }
         }
-        Spacer(modifier = Modifier.height(16.dp))
         
-        Text(
-            text = "${doctor?.firstName ?: stringResource(R.string.doctor_DoctorScreen)} ${doctor?.lastName ?: ""}",
-            fontSize = 24.sp, 
-            fontWeight = FontWeight.Bold, 
-            color = TextDark
-        )
-        Text(
-            text = doctor?.specialization ?: stringResource(R.string.especialitat_desconeguda_DoctorScreen),
-            fontSize = 16.sp, 
-            color = SecondaryGreen,
-            fontWeight = FontWeight.SemiBold
-        )
-        Text(
-            text = doctor?.email ?: "", 
-            fontSize = 14.sp, 
-            color = TextGrey
-        )
+        Spacer(modifier = Modifier.height(40.dp))
         
-        Spacer(modifier = Modifier.height(32.dp))
-        Button(
-            onClick = onLogout, 
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF5252).copy(alpha = 0.9f)),
-            modifier = Modifier.fillMaxWidth(0.6f)
+        // --- TARGETA DE DADES ---
+        Card(
+            shape = RoundedCornerShape(16.dp),
+            elevation = CardDefaults.cardElevation(4.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Text(stringResource(R.string.tancar_sessio_DoctorScreen))
+            Column(modifier = Modifier.padding(16.dp)) {
+
+                EditableProfileItem(
+                    isEditing = isEditing,
+                    icon = Icons.Default.Person,
+                    label = stringResource(R.string.nom_DoctorScreen),
+                    value = firstName,
+                    onValueChange = { firstName = it }
+                )
+                HorizontalDivider(color = Color.Gray.copy(alpha = 0.1f), modifier = Modifier.padding(vertical = 8.dp))
+
+                EditableProfileItem(
+                    isEditing = isEditing,
+                    icon = Icons.Default.Person,
+                    label = stringResource(R.string.cognom_DoctorScreen),
+                    value = lastName,
+                    onValueChange = { lastName = it }
+                )
+                HorizontalDivider(color = Color.Gray.copy(alpha = 0.1f), modifier = Modifier.padding(vertical = 8.dp))
+
+                EditableProfileItem(
+                    isEditing = isEditing,
+                    icon = Icons.Default.Email,
+                    label = stringResource(R.string.email_DoctorScreen),
+                    value = email,
+                    onValueChange = { email = it }
+                )
+            }
+        }
+        
+        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.height(24.dp))
+        
+        if (!isEditing) {
+            Button(
+                onClick = onLogout, 
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF5252).copy(alpha = 0.9f)),
+                modifier = Modifier.fillMaxWidth(0.6f).height(50.dp)
+            ) {
+                Text(stringResource(R.string.tancar_sessio_DoctorScreen), fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(20.dp))
+    }
+}
+
+@Composable
+fun EditableProfileItem(
+    isEditing: Boolean,
+    icon: ImageVector,
+    label: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+    keyboardType: KeyboardType = KeyboardType.Text
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Surface(
+            shape = CircleShape, color = PrimaryBlue.copy(alpha = 0.1f),
+            modifier = Modifier.size(40.dp)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(icon, contentDescription = null, tint = PrimaryBlue, modifier = Modifier.size(20.dp))
+            }
+        }
+
+        Spacer(modifier = Modifier.width(16.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(label, style = MaterialTheme.typography.labelMedium, color = Color.Gray)
+
+            if (isEditing) {
+                OutlinedTextField(
+                    value = value,
+                    onValueChange = onValueChange,
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    textStyle = MaterialTheme.typography.bodyLarge.copy(color = TextGrey),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        unfocusedBorderColor = PrimaryBlue.copy(alpha = 0.5f),
+                        focusedBorderColor = PrimaryBlue
+                    ),
+                    keyboardOptions = KeyboardOptions(keyboardType = keyboardType)
+                )
+            } else {
+                Text(
+                    text = value.ifBlank { "No definit" },
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = TextGrey,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
         }
     }
 }

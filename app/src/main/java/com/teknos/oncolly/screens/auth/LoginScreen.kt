@@ -78,7 +78,7 @@ fun LoginScreen(onLoginSuccess: (String) -> Unit) {
                                     app.pacientActual = respPacient.body()
                                 }
                             } else {
-                                val respDoctor = api.getDoctorProfile(tokenAmbBearer, body.userId)
+                                val respDoctor = api.getDoctorProfile(tokenAmbBearer)
                                 if (respDoctor.isSuccessful) {
                                     app.doctorActual = respDoctor.body()
                                 }

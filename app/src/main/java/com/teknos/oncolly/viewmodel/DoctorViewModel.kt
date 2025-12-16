@@ -10,6 +10,8 @@ import com.teknos.oncolly.entity.Pacient
 import com.teknos.oncolly.singletons.SingletonApp
 import kotlinx.coroutines.launch
 
+import com.teknos.oncolly.entity.UpdatePatientRequest
+
 data class DoctorUiState(
     val isLoading: Boolean = false,
     val patients: List<Pacient> = emptyList(),
@@ -20,6 +22,43 @@ data class DoctorUiState(
 class DoctorViewModel : ViewModel() {
     var state by mutableStateOf(DoctorUiState())
         private set
+
+    fun updateDoctorProfile(
+        firstName: String,
+        lastName: String,
+        email: String,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val app = SingletonApp.getInstance()
+                val token = "Bearer ${app.userToken}"
+                val request = UpdatePatientRequest(
+                    firstName = firstName,
+                    lastName = lastName,
+                    email = email,
+                    phoneNumber = "", // Not managed in Doctor UI
+                    dateOfBirth = ""  // Not managed in Doctor UI
+                )
+                val response = app.api.updateDoctorProfile(token, request)
+
+                if (response.isSuccessful) {
+                    // Update local singleton
+                    app.doctorActual = app.doctorActual?.copy(
+                        firstName = firstName,
+                        lastName = lastName,
+                        email = email
+                    )
+                    onSuccess()
+                } else {
+                    onError("Error: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                onError("Connection error: ${e.message}")
+            }
+        }
+    }
 
     fun loadPatients() {
         state = state.copy(isLoading = true, error = null)

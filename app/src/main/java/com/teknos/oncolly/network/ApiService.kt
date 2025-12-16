@@ -43,6 +43,12 @@ interface ApiService {
         @Body request: com.teknos.oncolly.entity.UpdatePatientRequest
     ): Response<Void>
 
+    @retrofit2.http.PUT("api/patients/profile")
+    suspend fun updateDoctorProfile(
+        @Header("Authorization") token: String,
+        @Body request: com.teknos.oncolly.entity.UpdatePatientRequest
+    ): Response<Void>
+
     // --- GUARDAR ACTIVITATS (Pacient activitats)---
     @POST("api/activities")
     suspend fun createActivity(
@@ -88,10 +94,9 @@ interface ApiService {
     ): Response<Pacient>
 
     // Per obtenir les dades del doctor i omplir el Singleton
-    @GET("api/doctors/{id}")
+    @GET("api/patients/profile")
     suspend fun getDoctorProfile(
-        @Header("Authorization") token: String,
-        @Path("id") id: String
+        @Header("Authorization") token: String
     ): Response<Doctor>
 
     // --- DELETE Activity (pacient) ---

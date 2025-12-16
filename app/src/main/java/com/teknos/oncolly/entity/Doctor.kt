@@ -5,5 +5,7 @@ data class Doctor(
     val firstName: String,
     val lastName: String,
     var email: String,
-    val specialization: String? = "Oncologia" // Default or nullable
+    val specialization: String? = "Oncologia", // Default or nullable
+    val phoneNumber: String? = null,
+    val dateOfBirth: String? = null
 )

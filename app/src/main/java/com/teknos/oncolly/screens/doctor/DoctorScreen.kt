@@ -671,7 +671,7 @@ private fun AppointmentSheet(
                         onValueChange = {},
                         label = { Text(
                             stringResource(R.string.diaDiaa_DoctorScreen) +
-                                "a") },
+                                "") },
                         readOnly = true,
                         enabled = false,
                         leadingIcon = { Icon(Icons.Default.DateRange, null) },

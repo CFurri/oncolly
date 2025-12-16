@@ -31,7 +31,6 @@ import com.teknos.oncolly.screens.doctor.TextGrey
 import com.teknos.oncolly.viewmodel.ActivitiesViewModel
 
 
-
 @Composable
 fun PatientActivitiesScreen(
     viewModel: ActivitiesViewModel = viewModel(),

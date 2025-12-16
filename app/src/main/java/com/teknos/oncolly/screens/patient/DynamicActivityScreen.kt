@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bed
 import androidx.compose.material.icons.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.Medication
@@ -32,6 +34,7 @@ import com.teknos.oncolly.viewmodel.PatientViewModel
 import com.teknos.oncolly.screens.patient.ActivityType
 import com.teknos.oncolly.screens.patient.InputType
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DynamicActivityScreen(
     activityType: ActivityType,
@@ -41,7 +44,27 @@ fun DynamicActivityScreen(
     // Aquesta variable guardarà el valor, sigui quin sigui (text, numero...)
     var valorInput by remember { mutableStateOf("") }
 
-    Scaffold { padding ->
+    Scaffold(
+        // AFEGEIX AQUEST BLOC 'topBar'
+        topBar = {
+            TopAppBar(
+                title = { }, // Títol buit perquè ja tens el títol gran a sota
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Tornar",
+                            tint = activityType.color, // El botó tindrà el color de l'activitat (blau, verd...)
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Transparent // Fons transparent perquè quedi net
+                )
+            )
+        }
+    ) { padding ->
         Column(
             modifier = Modifier
                 .padding(padding)

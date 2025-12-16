@@ -34,7 +34,7 @@ import com.teknos.oncolly.screens.doctor.PrimaryBlue
 import com.teknos.oncolly.singletons.SingletonApp
 import kotlinx.coroutines.launch
 
-private val BackgroundRed = Color(0xFFFFEBEE)
+private val RedLogout = Color(0xFFFF5252)
 
 @Composable
 fun ProfileScreen(
@@ -42,51 +42,71 @@ fun ProfileScreen(
     onNavigateToHome: () -> Unit,
     onNavigateToActivities: () -> Unit
 ) {
-    // 1. Dades del Singleton (Estat inicial)
+    // 1. Dades(Estat inicial)
     val app = SingletonApp.getInstance()
-    // 2. Estats locals per editar (això és el que canvia l'usuari en pantalla)
+    // 2. Estats locals per editar
     var firstName by remember { mutableStateOf(app.pacientActual?.firstName ?: "") }
     var lastName by remember { mutableStateOf(app.pacientActual?.lastName ?: "") }
     var email by remember { mutableStateOf(app.pacientActual?.email ?: "") }
     var telefon by remember { mutableStateOf(app.pacientActual?.phoneNumber ?: "") }
     var dataNaixement by remember { mutableStateOf(app.pacientActual?.dateOfBirth ?: "") }
 
-    var isLoading by remember { mutableStateOf(true) }
-    // 3. Mode Edició: Controla si estem mirant o escrivint
+    // 3. Mode Edició
     var isEditing by remember { mutableStateOf(false) }
-    
+
     val scope = rememberCoroutineScope()
     val context = androidx.compose.ui.platform.LocalContext.current
 
     LaunchedEffect(Unit) {
         try {
-            // Cridem al NOU endpoint que no necessita ID
             val token = "Bearer ${app.userToken}"
             val response = app.api.getPacientProfile(token)
 
             if (response.isSuccessful && response.body() != null) {
                 val dadesFresques = response.body()!!
-
-                // Actualitzem les variables de la pantalla
                 firstName = dadesFresques.firstName
                 lastName = dadesFresques.lastName
                 email = dadesFresques.email
                 telefon = dadesFresques.phoneNumber ?: ""
                 dataNaixement = dadesFresques.dateOfBirth ?: ""
-
-                // També actualitzem el Singleton per si de cas
                 app.pacientActual = dadesFresques
             }
         } catch (e: Exception) {
-            // Gestionar error si cal (ex: sense internet)
-        } finally {
-            isLoading = false
+            // Gestió d'errors silenciosa o Toast
         }
     }
 
     val backgroundBrush = Brush.verticalGradient(
         colors = listOf(Color.White, PrimaryBlue.copy(alpha = 0.15f))
     )
+
+    // FUNCIÓ PER GUARDAR (Extreta per reutilitzar-la al botó de dalt)
+    fun saveProfile() {
+        scope.launch {
+            try {
+                val token = "Bearer ${app.userToken}"
+                val req = UpdatePatientRequest(firstName, lastName, email, telefon, dataNaixement)
+                val resp = app.api.updatePatientProfile(token, req)
+                if (resp.isSuccessful) {
+                    isEditing = false
+                    app.pacientActual = app.pacientActual?.copy(
+                        firstName = firstName,
+                        lastName = lastName,
+                        email = email,
+                        phoneNumber = telefon,
+                        dateOfBirth = dataNaixement
+                    )
+                    android.widget.Toast.makeText(context,
+                        context.getString(R.string.perfil_actualitzat_ProfileScreen), android.widget.Toast.LENGTH_SHORT).show()
+                } else {
+                    android.widget.Toast.makeText(context, "Error: ${resp.code()}", android.widget.Toast.LENGTH_SHORT).show()
+                }
+            } catch(e: Exception) {
+                android.widget.Toast.makeText(context,
+                    context.getString(R.string.error_connexio_ProfileScreen), android.widget.Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
 
     Scaffold(
         bottomBar = {
@@ -97,51 +117,7 @@ fun ProfileScreen(
                 onNavigateToProfile = {}
             )
         },
-        // AFEGIM UN BOTÓ FLOTANT PER EDITAR / GUARDAR
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = {
-                    if (isEditing) {
-                        scope.launch {
-                            try {
-                                val token = "Bearer ${app.userToken}"
-                                val req = UpdatePatientRequest(firstName, lastName, email, telefon, dataNaixement)
-                                val resp = app.api.updatePatientProfile(token, req)
-                                if (resp.isSuccessful) {
-                                    isEditing = false
-                                    // Update Singleton
-                                    app.pacientActual = app.pacientActual?.copy(
-                                        firstName = firstName,
-                                        lastName = lastName,
-                                        email = email,
-                                        phoneNumber = telefon,
-                                        dateOfBirth = dataNaixement
-                                    )
-                                    android.widget.Toast.makeText(context,
-                                        context.getString(R.string.perfil_actualitzat_ProfileScreen), android.widget.Toast.LENGTH_SHORT).show()
-                                } else {
-                                    android.widget.Toast.makeText(context, "Error: ${resp.code()}", android.widget.Toast.LENGTH_SHORT).show()
-                                }
-                            } catch(e: Exception) {
-                                android.widget.Toast.makeText(context,
-                                    context.getString(R.string.error_connexio_ProfileScreen), android.widget.Toast.LENGTH_SHORT).show()
-                            }
-                        }
-                    } else {
-                        // Entrem en mode edició
-                        isEditing = true
-                    }
-                },
-                containerColor = PrimaryBlue,
-                contentColor = Color.White
-            ) {
-                // Canviem la icona segons l'estat
-                Icon(
-                    imageVector = if (isEditing) Icons.Default.Check else Icons.Default.Edit,
-                    contentDescription = if (isEditing) "Guardar" else "Editar"
-                )
-            }
-        },
+        // ELIMINAT EL floatingActionButton D'AQUÍ
         containerColor = Color.Transparent
     ) { paddingValues ->
 
@@ -158,18 +134,45 @@ fun ProfileScreen(
                     .padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(
-                    text = if (isEditing) stringResource(R.string.editant_perfil_ProfileScreen) else stringResource(
-                        R.string.el_meu_perfil_ProfileScreen
-                    ),
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = TextGrey
-                )
+
+                // --- CAPÇALERA AMB TÍTOL I BOTÓ EDITAR (NOU DISSENY) ---
+                Box(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    // Títol centrat (Opcional, o alineat a l'esquerra com tenies)
+                    Text(
+                        text = if (isEditing) stringResource(R.string.editant_perfil_ProfileScreen) else stringResource(R.string.el_meu_perfil_ProfileScreen),
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = TextGrey,
+                        modifier = Modifier.align(Alignment.CenterStart)
+                    )
+
+                    // --- BOTÓ NOU (QUADRAT BLAU) ---
+                    Surface(
+                        onClick = {
+                            if (isEditing) saveProfile() else isEditing = true
+                        },
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .size(48.dp)
+                            .shadow(4.dp, RoundedCornerShape(12.dp)),
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (isEditing) SecondaryGreen else PrimaryBlue
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = if (isEditing) Icons.Default.Check else Icons.Default.Edit,
+                                contentDescription = if (isEditing) "Guardar" else "Editar",
+                                tint = Color.White
+                            )
+                        }
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // Avatar (Igual que abans)
+                // Avatar
                 Surface(
                     shape = CircleShape,
                     color = Color.White,
@@ -194,7 +197,7 @@ fun ProfileScreen(
 
                 Spacer(modifier = Modifier.height(40.dp))
 
-                // --- TARGETA DE DADES (ADAPTABLE) ---
+                // --- TARGETA DE DADES ---
                 Card(
                     shape = RoundedCornerShape(16.dp),
                     elevation = CardDefaults.cardElevation(4.dp),
@@ -253,32 +256,34 @@ fun ProfileScreen(
                 Spacer(modifier = Modifier.weight(1f))
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Botó Logout (Només visible si NO estem editant per seguretat)
+                // BOTÓ LOGOUT (ESTIL DOCTOR)
                 if (!isEditing) {
                     Button(
                         onClick = {
                             SingletonApp.getInstance().tancarSessio()
                             onLogout()
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF5252).copy(alpha = 0.9f)),
-                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = RedLogout.copy(alpha = 0.9f)),
+                        // Shape per defecte o una mica arrodonit, com Doctor
+                        shape = ButtonDefaults.shape,
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp),
-                        elevation = ButtonDefaults.buttonElevation(0.dp)
+                            .fillMaxWidth(0.6f) // 60% d'amplada com a DoctorScreen
+                            .height(50.dp),
+                        elevation = ButtonDefaults.buttonElevation(2.dp)
                     ) {
-                        Icon(Icons.Default.ExitToApp, contentDescription = null)
-                        Spacer(modifier = Modifier.width(12.dp))
+                        // Icona opcional, DoctorScreen no en té, però ProfileScreen sí en tenia.
+                        // Si vols clavat a Doctor, treu la Icona. Aquí la deixo per mantenir coherència visual.
                         Text(stringResource(R.string.tancar_sessio_ProfileScreen), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     }
                 }
+
+                // Espai extra al final perquè no quedi enganxat a la barra de navegació
+                Spacer(modifier = Modifier.height(20.dp))
             }
         }
     }
 }
 
-// --- NOU COMPONENT INTEL·LIGENT ---
-// Decideix si mostra un Text o un TextField segons "isEditing"
 @Composable
 fun EditableProfileItem(
     isEditing: Boolean,
@@ -294,7 +299,6 @@ fun EditableProfileItem(
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Icona
         Surface(
             shape = CircleShape, color = PrimaryBlue.copy(alpha = 0.1f),
             modifier = Modifier.size(40.dp)
@@ -310,7 +314,6 @@ fun EditableProfileItem(
             Text(label, style = MaterialTheme.typography.labelMedium, color = Color.Gray)
 
             if (isEditing) {
-                // VERSÓ EDITABLE
                 OutlinedTextField(
                     value = value,
                     onValueChange = onValueChange,
@@ -324,7 +327,6 @@ fun EditableProfileItem(
                     keyboardOptions = KeyboardOptions(keyboardType = keyboardType)
                 )
             } else {
-                // VERSIÓ LECTURA
                 Text(
                     text = value.ifBlank { stringResource(R.string.no_definit_profilescreen) },
                     style = MaterialTheme.typography.bodyLarge,

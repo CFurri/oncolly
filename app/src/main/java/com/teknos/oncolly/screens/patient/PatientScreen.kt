@@ -30,10 +30,18 @@ import com.teknos.oncolly.singletons.SingletonApp
 import kotlin.math.cos
 import kotlin.math.sin
 
-// (Opcional) Recomanació: Fes-los privats per no barrejar-los amb altres pantalles
+// Recomanació: Fes-los privats per no barrejar-los
 private val PrimaryBlue = Color(0xFF259DF4)
 val SecondaryGreen = Color(0xFF66BB6A)
 val TextGrey = Color(0xFF565D6D)
+
+// CLASSE AUXILIAR: Per guardar l'ID intern + el Text traduït
+data class MenuOption(
+    val id: String,         // ID intern (ex: "walking") -> NO CANVIA
+    val label: String,      // Text visible (ex: "Caminar") -> CANVIA AMB L'IDIOMA
+    val icon: ImageVector,
+    val color: Color
+)
 
 @Composable
 fun PacientScreen(
@@ -62,77 +70,75 @@ fun PacientScreen(
         }
     ) { padding ->
 
-        // Contenidor principal (Column)
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(brush = backgroundBrush) // RECOMANACIÓ: Aplicar el fons aquí
+                .background(brush = backgroundBrush)
                 .padding(padding)
         ) {
 
             HeaderPacient()
 
-            // AQUESTA ÉS LA CAPSA DEL "SISTEMA SOLAR"
+            // --- SISTEMA SOLAR ---
             Box(
                 modifier = Modifier
-                    .weight(1f) // Ocupa tot l'espai restant
+                    .weight(1f)
                     .fillMaxWidth(),
-                contentAlignment = Alignment.Center // Tot el que hi posis anirà al centre per defecte
+                contentAlignment = Alignment.Center
             ) {
-                // 1. CORRECCIÓ: La icona central ara està DINS del Box
-                // La posem primer perquè quedi al fons (per sota de les bombolles si es toquen)
+                // Icona central
                 Icon(
                     imageVector = Icons.Default.MonitorHeart,
                     contentDescription = null,
                     tint = PrimaryBlue.copy(alpha = 0.1f),
-                    modifier = Modifier.size(100.dp) // Mida gran
+                    modifier = Modifier.size(100.dp)
                 )
 
-                // 2. Les bombolles al voltant
+                // LLISTA CORREGIDA: Ara passem l'ID manualment perquè coincideixi amb ActivityType.kt
                 val items = listOf(
-                    Triple(stringResource(R.string.walking_patient_screen), Icons.Default.DirectionsWalk, PrimaryBlue),
-                    Triple(stringResource(R.string.eating_patient_screen), Icons.Default.Restaurant, SecondaryGreen),
-                    Triple(stringResource(R.string.medication_patient_screen), Icons.Default.Medication, PrimaryBlue),
-                    Triple(stringResource(R.string.sleep_patient_screen), Icons.Default.Bed, SecondaryGreen),
-                    Triple(stringResource(R.string.hydration_patient_screen), Icons.Default.LocalDrink, PrimaryBlue),
-                    Triple(stringResource(R.string.exercise_patient_screen), Icons.Default.FitnessCenter, SecondaryGreen),
-                    Triple(stringResource(R.string.depositions_patient_screen), Icons.Default.Bathroom, PrimaryBlue),
-                    Triple(stringResource(R.string.upload_png_patient_screen), Icons.Default.CloudUpload, SecondaryGreen)
+                    MenuOption("walking", stringResource(R.string.walking_patient_screen), Icons.Default.DirectionsWalk, PrimaryBlue),
+                    MenuOption("eating", stringResource(R.string.eating_patient_screen), Icons.Default.Restaurant, SecondaryGreen),
+                    MenuOption("medication", stringResource(R.string.medication_patient_screen), Icons.Default.Medication, PrimaryBlue),
+                    MenuOption("sleep", stringResource(R.string.sleep_patient_screen), Icons.Default.Bed, SecondaryGreen),
+                    MenuOption("hydration", stringResource(R.string.hydration_patient_screen), Icons.Default.LocalDrink, PrimaryBlue),
+                    MenuOption("exercise", stringResource(R.string.exercise_patient_screen), Icons.Default.FitnessCenter, SecondaryGreen),
+                    // Atenció: Al teu ActivityType tens "depositions" (tot i que l'enum es diu MEDITATION)
+                    MenuOption("depositions", stringResource(R.string.depositions_patient_screen), Icons.Default.Wc, PrimaryBlue), // Canviat Bathroom per Wc per coincidir amb l'altre fitxer si cal
+                    // Aquest és especial
+                    MenuOption("upload_png", stringResource(R.string.upload_png_patient_screen), Icons.Default.CloudUpload, SecondaryGreen)
                 )
 
                 val radius = 130.dp
 
                 items.forEachIndexed { index, item ->
-                    // Càlcul de l'angle per fer el cercle
                     val angleRad = (2 * Math.PI * index / items.size) - (Math.PI / 2)
-
                     val xOffset = (radius.value * cos(angleRad)).dp
                     val yOffset = (radius.value * sin(angleRad)).dp
 
                     ActivityBubble(
-                        text = item.first,
-                        icon = item.second,
-                        color = item.third,
-                        modifier = Modifier.offset(x = xOffset, y = yOffset), // Això les mou des del centre cap a fora
+                        text = item.label, // Mostrem el text traduït
+                        icon = item.icon,
+                        color = item.color,
+                        modifier = Modifier.offset(x = xOffset, y = yOffset),
                         onClick = {
-                            if (item.first == context.getString(R.string.upload_png_patient_screen)) {
+                            if (item.id == "upload_png") {
+                                // Lògica especial per la web
                                 val intent = Intent(
                                     Intent.ACTION_VIEW,
                                     Uri.parse("http://bucket-projecte-ocr-sang-final-per-web-statica.s3-website-eu-west-1.amazonaws.com")
                                 )
                                 context.startActivity(intent)
                             } else {
-                                onActivityClick(item.first.lowercase())
+                                // AQUÍ ESTÀ EL FIX: Passem l'ID intern ("walking"), no el text ("Caminar")
+                                onActivityClick(item.id)
                             }
                         }
                     )
                 }
             }
-
         }
     }
 }
-
 
 @Composable
 fun ActivityBubble(
@@ -161,11 +167,16 @@ fun ActivityBubble(
                 modifier = Modifier.size(28.dp)
             )
             Spacer(modifier = Modifier.height(4.dp))
+            // Text petit amb maxLines per si la traducció és llarga
             Text(
                 text = text,
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.White
+                color = Color.White,
+                lineHeight = 12.sp,
+                maxLines = 2,
+                modifier = Modifier.padding(horizontal = 4.dp),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
         }
     }
@@ -173,8 +184,10 @@ fun ActivityBubble(
 
 @Composable
 fun HeaderPacient() {
-    val pacient = SingletonApp.getInstance().pacientActual
-    val nomAMostrar = pacient?.email ?: "Pacient"
+    val app = SingletonApp.getInstance()
+    val pacient = app.pacientActual
+    // Fem servir takeIf per seguretat
+    val nomAMostrar = pacient?.firstName?.takeIf { it.isNotEmpty() } ?: "Pacient"
 
     Row(
         modifier = Modifier
@@ -184,7 +197,7 @@ fun HeaderPacient() {
     ) {
         Surface(
             shape = RoundedCornerShape(12.dp),
-            color = PrimaryBlue,
+            color = Color(0xFF259DF4),
             modifier = Modifier
                 .size(48.dp)
                 .shadow(4.dp)
@@ -261,7 +274,7 @@ fun BottomNavItem(
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
-    val color = if (isSelected) PrimaryBlue else Color.Gray
+    val color = if (isSelected) Color(0xFF259DF4) else Color.Gray
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,

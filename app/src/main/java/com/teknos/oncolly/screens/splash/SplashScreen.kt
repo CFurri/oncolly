@@ -37,7 +37,7 @@ fun SplashScreen(onNavigate: (String) -> Unit) {
 
             try {
                 // Pre-fetch profile to avoid empty screens
-                if (session.role.equals("PACIENT", ignoreCase = true)) {
+                if (session.role.equals("PATIENT", ignoreCase = true)) {
                     val p = app.api.getPacientProfile(tokenBearer)
                     if (p.isSuccessful) app.pacientActual = p.body()
                     onNavigate("home_pacient")

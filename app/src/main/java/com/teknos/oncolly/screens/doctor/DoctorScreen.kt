@@ -57,6 +57,7 @@ enum class DoctorTab(val icon: ImageVector, val title: String) {
     PERFIL(Icons.Outlined.Person, "Perfil")
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DoctorScreen(
     onLogout: () -> Unit,
@@ -67,6 +68,7 @@ fun DoctorScreen(
 
     var selectedTab by remember { mutableStateOf(DoctorTab.PACIENTS) }
     var showAddPatientDialog by remember { mutableStateOf(false) }
+    val addPatientSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val context = LocalContext.current
 
     LaunchedEffect(Unit) {
@@ -148,7 +150,8 @@ fun DoctorScreen(
     }
 
     if (showAddPatientDialog) {
-        AddPatientDialog(
+        AddPatientSheet(
+            sheetState = addPatientSheetState,
             onDismiss = { showAddPatientDialog = false },
             onSubmit = { first, last, email, password, phone, dob ->
                 doctorViewModel.createPatient(first, last, email, password, phone, dob) {
@@ -796,10 +799,11 @@ private fun AppointmentSheet(
     }
 }
 
-// --- PANTALLA ADD PATIENT DIALOG ---
+// --- PANTALLA ADD PATIENT SHEET (MODAL BOTTOM SHEET) ---
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddPatientDialog(
+fun AddPatientSheet(
+    sheetState: SheetState,
     onDismiss: () -> Unit,
     onSubmit: (String, String, String, String, String, String) -> Unit
 ) {
@@ -815,11 +819,19 @@ fun AddPatientDialog(
         initialSelectedDateMillis = dob.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
     )
 
-    AlertDialog(
-        containerColor = Color.White,
+    ModalBottomSheet(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.nou_pacient_DoctorScreen), fontWeight = FontWeight.Bold, color = TextDark) },
-        text = {
+        sheetState = sheetState,
+        containerColor = Color.White
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text(stringResource(R.string.nou_pacient_DoctorScreen), fontWeight = FontWeight.Bold, fontSize = 22.sp, color = TextDark)
+            
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(
@@ -887,21 +899,21 @@ fun AddPatientDialog(
                     )
                 }
             }
-        },
-        confirmButton = {
+
             Button(
                 onClick = { onSubmit(firstName, lastName, email, password, phone, dob.format(DateTimeFormatter.ISO_LOCAL_DATE)) },
-                colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
+                colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Text(stringResource(R.string.crear__DoctorScreen))
+                Text(stringResource(R.string.crear__DoctorScreen), fontSize = 16.sp)
             }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.cancel_lar_DoctorScreen), color = TextGrey)
-            }
+            
+            Spacer(modifier = Modifier.height(24.dp))
         }
-    )
+    }
 
     if (showDatePicker) {
         DatePickerDialog(

@@ -68,4 +68,14 @@
     <string name="tancar_sessio_DoctorScreen">Tancar Sessió</string>
     <string name="cancel_DoctorScreen">Cancel·lar</string>
     <string name="password_DoctorScreen">Contrasenya</string>
+    <string name="label_input_walking">Minuts caminant</string>
+    <string name="label_input_exercise">Quin exercici has fet?</string>
+    <string name="label_input_eating">Descriu el teu àpat</string>
+    <string name="label_input_depositions">Ha anat bé?</string>
+    <string name="label_input_medication">Medicament pres</string>
+    <string name="label_input_sleep">Hores dormides</string>
+    <string name="label_input_hydration">Gots d\'aigua</string>    <string name="boto_si">SÍ</string>
+    <string name="boto_no">NO</string>
+    <string name="tornar_enrere">Tornar</string>
+    <string name="visita_de_seguiment">Visita de seguiment</string>
 </resources>

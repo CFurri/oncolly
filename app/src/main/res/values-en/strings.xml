@@ -69,4 +69,15 @@
     <string name="cancel_lar_DoctorScreen">Cancel</string>
     <string name="doctor_DoctorScreen">Doctor</string>
     <string name="especialitat_desconeguda_DoctorScreen">Unknown specialty</string>
+    <string name="label_input_walking">Minutes walking</string>
+    <string name="label_input_exercise">What exercise did you do?</string>
+    <string name="label_input_eating">Describe your meal</string>
+    <string name="label_input_depositions">Did it go well?</string>
+    <string name="label_input_medication">Medication taken</string>
+    <string name="label_input_sleep">Hours slept</string>
+    <string name="label_input_hydration">Glasses of water</string>
+    <string name="boto_si">YES</string>
+    <string name="boto_no">NO</string>
+    <string name="tornar_enrere">Back</string>
+    <string name="visita_de_seguiment">Follow-up visit</string>
 </resources>

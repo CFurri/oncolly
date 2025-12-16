@@ -369,8 +369,9 @@ fun AgendaScreen(
 
     var showSheet by remember { mutableStateOf(false) }
     var draftPatient by remember { mutableStateOf(patients.firstOrNull()?.id.orEmpty()) }
-    var draftTitle by remember { mutableStateOf("Visita seguiment") }
     var draftNotes by remember { mutableStateOf("") }
+    val titolPerDefecte = stringResource(R.string.visita_de_seguiment)
+    var draftTitle by remember { mutableStateOf(titolPerDefecte) }
     var draftStart by remember { mutableStateOf(now) }
     var draftDurationMinutes by remember { mutableStateOf(30) } 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -582,7 +583,7 @@ private fun AppointmentSheet(
                 .padding(horizontal = 24.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text("Nova Cita", fontWeight = FontWeight.Bold, fontSize = 22.sp, color = TextDark)
+            Text((stringResource(R.string.nova_cita_DoctorScreen)), fontWeight = FontWeight.Bold, fontSize = 22.sp, color = TextDark)
 
             // SELECTOR DE PACIENT MILLORAT (Searchable)
             Box {

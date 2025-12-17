@@ -1,14 +1,13 @@
-package com.teknos.oncolly.repository
+package com.teknos.oncolly.singletons
 
 import com.teknos.oncolly.entity.Appointment
 import com.teknos.oncolly.entity.CreateAppointmentRequest
 import com.teknos.oncolly.network.ApiService
-import com.teknos.oncolly.singletons.SingletonApp
 
 /**
  * Singleton repository to centralize appointment calls and keep a small in-memory cache.
  */
-object AppointmentRepository {
+object AppointmentSingleton {
     private val api: ApiService = SingletonApp.getInstance().api
     private val cache: MutableList<Appointment> = mutableListOf()
 

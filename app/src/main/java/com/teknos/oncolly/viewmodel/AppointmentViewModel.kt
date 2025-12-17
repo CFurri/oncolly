@@ -7,7 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.teknos.oncolly.entity.Appointment
 import com.teknos.oncolly.entity.CreateAppointmentRequest
-import com.teknos.oncolly.repository.AppointmentRepository
+import com.teknos.oncolly.singletons.AppointmentSingleton
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.UUID
@@ -28,14 +28,14 @@ class AppointmentViewModel : ViewModel() {
     private val formatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
 
     fun loadAppointments() {
-        val cached = AppointmentRepository.cached()
+        val cached = AppointmentSingleton.cached()
         if (cached.isNotEmpty()) {
             state = state.copy(appointments = cached, isLoading = false, error = null)
         } else {
             state = state.copy(isLoading = true, error = null, feedback = null)
         }
         viewModelScope.launch {
-            val result = AppointmentRepository.fetchAppointments()
+            val result = AppointmentSingleton.fetchAppointments()
             state = result.fold(
                 onSuccess = { list -> state.copy(isLoading = false, appointments = list, feedback = null) },
                 onFailure = { err -> state.copy(isLoading = false, error = err.message, feedback = null) }
@@ -61,7 +61,7 @@ class AppointmentViewModel : ViewModel() {
             status = "syncing",
             title = title
         )
-        AppointmentRepository.addLocal(provisional)
+        AppointmentSingleton.addLocal(provisional)
         val optimisticList = (listOf(provisional) + state.appointments).sortedBy { it.startTime }
         state = state.copy(appointments = optimisticList, error = null, feedback = "Saving...")
 
@@ -74,13 +74,13 @@ class AppointmentViewModel : ViewModel() {
             doctorNotes = notes
         )
         viewModelScope.launch {
-            val result = AppointmentRepository.createAppointment(request)
+            val result = AppointmentSingleton.createAppointment(request)
             state = result.fold(
                 onSuccess = {
                     val replaced = state.appointments.map {
                         if (it.id == provisional.id) it.copy(status = "scheduled") else it
                     }.sortedBy { it.startTime }
-                    AppointmentRepository.addLocal(
+                    AppointmentSingleton.addLocal(
                         provisional.copy(status = "scheduled")
                     )
                     state.copy(
@@ -90,7 +90,7 @@ class AppointmentViewModel : ViewModel() {
                     )
                 },
                 onFailure = { err ->
-                    AppointmentRepository.removeLocal(provisional.id)
+                    AppointmentSingleton.removeLocal(provisional.id)
                     state.copy(
                         isLoading = false,
                         appointments = state.appointments.filterNot { it.id == provisional.id },
@@ -104,14 +104,14 @@ class AppointmentViewModel : ViewModel() {
 
     fun deleteAppointment(id: String) {
         val previous = state.appointments
-        AppointmentRepository.removeLocal(id)
+        AppointmentSingleton.removeLocal(id)
         state = state.copy(
             appointments = previous.filterNot { it.id == id },
             error = null,
             feedback = "Removing..."
         )
         viewModelScope.launch {
-            val result = AppointmentRepository.deleteAppointment(id)
+            val result = AppointmentSingleton.deleteAppointment(id)
             state = result.fold(
                 onSuccess = {
                     state.copy(
@@ -120,7 +120,7 @@ class AppointmentViewModel : ViewModel() {
                     )
                 },
                 onFailure = { err ->
-                    previous.forEach { AppointmentRepository.addLocal(it) }
+                    previous.forEach { AppointmentSingleton.addLocal(it) }
                     state.copy(
                         isLoading = false,
                         error = err.message,

@@ -55,7 +55,8 @@ fun PacientDetailScreen(pacientId: String, onBack: () -> Unit) {
 
             val respActivitats = api.getActivities(token, pacientId)
             if (respActivitats.isSuccessful) {
-                activitatsList = respActivitats.body() ?: emptyList()
+                // Ordenem la llista: .sortedByDescending posa les dates més recents primer
+                activitatsList = (respActivitats.body() ?: emptyList()).sortedByDescending { it.occurredAt }
             }
         } catch (e: Exception) {
             Toast.makeText(context, "Error de connexió", Toast.LENGTH_SHORT).show()

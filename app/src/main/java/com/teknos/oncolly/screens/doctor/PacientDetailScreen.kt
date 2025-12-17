@@ -28,6 +28,11 @@ import com.teknos.oncolly.entity.Pacient
 import com.teknos.oncolly.singletons.SingletonApp
 import com.teknos.oncolly.utils.PdfGenerator
 
+//Pel JSON de l'etiqueta
+import org.json.JSONObject
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PacientDetailScreen(pacientId: String, onBack: () -> Unit) {
@@ -151,11 +156,15 @@ fun LlistaActivitatsPacient(llista: List<Activity>) {
 
 @Composable
 fun ItemActivitat(activitat: Activity) {
+    // 1. Determinem icona i color segons el tipus
     val (icon, color) = when (activitat.activityType.lowercase()) {
         "walking" -> Pair(Icons.AutoMirrored.Filled.DirectionsWalk, PrimaryBlue)
         "medication" -> Pair(Icons.Default.Medication, Color(0xFF565D6D))
         "eating" -> Pair(Icons.Default.Restaurant, SecondaryGreen)
         "sleep" -> Pair(Icons.Default.Bed, SecondaryGreen)
+        "hydration" -> Pair(Icons.Default.LocalDrink, PrimaryBlue)
+        "exercise" -> Pair(Icons.Default.FitnessCenter, PrimaryBlue)
+        "depositions" -> Pair(Icons.Default.Wc, Color.Gray)
         else -> Pair(Icons.Default.Info, TextGrey)
     }
 
@@ -169,12 +178,15 @@ fun ItemActivitat(activitat: Activity) {
             modifier = Modifier.padding(16.dp).fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Icona Visual
             Surface(shape = CircleShape, color = color.copy(alpha = 0.1f), modifier = Modifier.size(48.dp)) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(icon, null, tint = color)
                 }
             }
             Spacer(modifier = Modifier.width(16.dp))
+
+            // Contingut Central (Títol + Dades Formatades)
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = activitat.activityType.uppercase(),
@@ -182,15 +194,13 @@ fun ItemActivitat(activitat: Activity) {
                     fontSize = 12.sp,
                     color = TextGrey
                 )
-                Text(
-                    text = activitat.value,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 16.sp,
-                    color = TextDark
-                )
+                // AQUÍ ÉS ON FEM LA MÀGIA DEL JSON:
+                SmartActivityContentDoctor(rawContent = activitat.value, color = TextDark)
             }
+
+            // Data Formatada Bonic
             Text(
-                text = activitat.occurredAt.take(10),
+                text = formatDatePrettyDoctor(activitat.occurredAt),
                 fontSize = 12.sp,
                 color = TextGrey
             )
@@ -285,5 +295,57 @@ fun InfoCard(titol: String, valor: String, icon: ImageVector) {
                 Text(text = valor, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = TextDark)
             }
         }
+    }
+}
+
+// --- FUNCIONS D'AJUDA PER FORMATAR DADES AL DOCTOR ---
+
+@Composable
+fun SmartActivityContentDoctor(rawContent: String, color: Color) {
+    val dades = remember(rawContent) {
+        try {
+            val json = JSONObject(rawContent)
+            val map = mutableMapOf<String, String>()
+            json.keys().forEach { key -> map[key] = json.getString(key) }
+            map
+        } catch (e: Exception) { null }
+    }
+
+    if (dades == null) {
+        // Si no és JSON (dades velles), mostra el text tal qual
+        Text(text = rawContent, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, color = color)
+    } else {
+        // Si és JSON, mostra llista neta (ignorant cronòmetre i camps buits)
+        Column {
+            dades.forEach { (key, value) ->
+                if (key != "time_stopwatch" && value.isNotBlank()) {
+                    val (emoji, unitat) = when (key) {
+                        "distance" -> "👣" to "km"
+                        "duration", "hours" -> "⏱️" to "h" // o min depenent de la teva lògica
+                        "glasses" -> "💧" to "gots"
+                        "drug_name" -> "💊" to ""
+                        "result" -> "📝" to ""
+                        else -> "📌" to ""
+                    }
+                    Text(
+                        text = "$emoji $value $unitat",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 16.sp,
+                        color = color
+                    )
+                }
+            }
+        }
+    }
+}
+
+fun formatDatePrettyDoctor(isoDate: String): String {
+    return try {
+        val parsedDate = LocalDateTime.parse(isoDate)
+        // Format curt per llista: 17/12 - 12:30
+        val formatter = DateTimeFormatter.ofPattern("dd/MM - HH:mm")
+        parsedDate.format(formatter)
+    } catch (e: Exception) {
+        isoDate.take(10) // Fallback si falla
     }
 }

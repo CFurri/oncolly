@@ -84,6 +84,13 @@
     <string name="about_developers">Desenvolupat per:</string>
     <string name="about_student_1" translatable="false">Arshan Hassanzadeh</string>
     <string name="about_student_2" translatable="false">Carles Furriols</string>
-    <string name="about_academic_year">Curs 2024-2025</string>
+    <string name="about_academic_year">Curs 2024–2025</string>
     <string name="tornar">Tornar</string>
+
+    <!--Strings per les activitats-->
+    <string name="label_km">Distància (Km)</string>
+    <string name="label_minuts">Temps (Minuts)</string>
+    <string name="start_timer">Iniciar</string>
+    <string name="stop_timer">Aturar</string>
+    <string name="reset_timer">Reiniciar</string>
 </resources>

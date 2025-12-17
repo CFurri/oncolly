@@ -27,6 +27,15 @@ import com.teknos.oncolly.screens.doctor.PrimaryBlue
 import com.teknos.oncolly.screens.doctor.TextGrey
 import com.teknos.oncolly.viewmodel.ActivitiesViewModel
 
+//Activitats + Dinàmica
+import org.json.JSONObject // Necessari per llegir el text
+import androidx.compose.foundation.layout.FlowRow // Per si hi ha moltes dades
+import androidx.compose.ui.unit.sp
+
+//Targeta + Fer bonica la data i l'hora
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+
 
 @Composable
 fun PatientActivitiesScreen(
@@ -102,6 +111,7 @@ fun PatientActivitiesScreen(
 fun ActivityItem(activity: Activity, onDeleteClick: () -> Unit) {
     // Recuperem la icona i el color segons el tipus (Walking, Eating...)
     val info = getActivityVisuals(activity.activityType ?: "")
+    val type = ActivityType.values().find { it.id == activity.activityType } ?: ActivityType.WALKING
 
     Card(
         elevation = CardDefaults.cardElevation(4.dp),
@@ -144,15 +154,14 @@ fun ActivityItem(activity: Activity, onDeleteClick: () -> Unit) {
                     color = TextGrey
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = activity.value ?: "", // Ex: "30 minuts"
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = TextGrey.copy(alpha = 0.8f)
+                SmartActivityContent(
+                    rawContent = activity.value,
+                    color = type.color
                 )
 
                 // Data més petita
                 Text(
-                    text = activity.occurredAt ?: "",
+                    text = formatDatePretty(activity.occurredAt),
                     style = MaterialTheme.typography.labelSmall,
                     color = Color.Gray,
                     modifier = Modifier.padding(top = 2.dp)
@@ -201,5 +210,86 @@ fun getActivityVisuals(type: String): Pair<ImageVector, Color> {
         "medication" -> Pair(Icons.Default.Medication, PrimaryBlue)
         "depositions" -> Pair(Icons.Default.Wc, Color.Gray)
         else -> Pair(Icons.Default.Assignment, PrimaryBlue) // Per defecte
+    }
+}
+
+@Composable
+fun SmartActivityContent(rawContent: String, color: Color) {
+    // 1. Intentem parsar el JSON
+    val dades = remember(rawContent) {
+        try {
+            val json = JSONObject(rawContent)
+            val map = mutableMapOf<String, String>()
+            json.keys().forEach { key ->
+                map[key] = json.getString(key)
+            }
+            map
+        } catch (e: Exception) {
+            // Si falla (perquè és un text antic tipus "30"), retornem null
+            null
+        }
+    }
+
+    if (dades == null) {
+        // CAS A: És un text antic o simple -> El mostrem tal qual
+        Text(
+            text = rawContent,
+            style = MaterialTheme.typography.bodyLarge,
+            color = Color.Gray
+        )
+    } else {
+        // CAS B: És un JSON complex -> El formatem bonic
+        Column {
+            // Recorrem les dades i els posem icones/unitats segons la clau
+            dades.forEach { (key, value) ->
+                // --- FILTRE: NO MOSTREM EL CRONÒMETRE AQUÍ ---
+                // Només mostrem si NO és el stopwatch i si té valor
+                if (key != "time_stopwatch" && value.isNotBlank()) {
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(vertical = 2.dp)
+                    ) {
+                        // Icona i Unitat segons el tipus de dada
+                        val (icona, unitat) = when (key) {
+                            "distance" -> "👣" to "km"
+                            "duration" -> "⏱️" to "min" // Minuts (o hores segons com ho guardis)
+                            "hours" -> "😴" to "h"
+                            "glasses" -> "💧" to "gots"
+                            "drug_name" -> "💊" to ""
+                            "result" -> "📝" to ""
+                            "description", "detail" -> "📄" to ""
+                            else -> "📌" to ""
+                        }
+
+                        Text(text = icona, fontSize = 16.sp)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "$value $unitat",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFF2C3E50)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Funció per convertir "2025-12-17T12:51..." a "17/12/25 - 12:51:40"
+fun formatDatePretty(isoDate: String): String {
+    return try {
+        // 1. Llegim el format ISO que ve del servidor
+        val parsedDate = LocalDateTime.parse(isoDate)
+
+        // 2. Definim el format que volem nosaltres (dd/MM/yy - HH:mm:ss)
+        val formatter = DateTimeFormatter.ofPattern("dd/MM/yy - HH:mm:ss")
+
+        // 3. Retornem el text maco
+        parsedDate.format(formatter)
+    } catch (e: Exception) {
+        // Si falla (per exemple si la data ve buida), retornem el text original
+        isoDate
     }
 }

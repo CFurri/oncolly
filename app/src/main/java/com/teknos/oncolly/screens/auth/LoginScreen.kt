@@ -5,6 +5,7 @@ import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Email
@@ -26,8 +27,9 @@ import com.teknos.oncolly.network.LoginRequest
 import com.teknos.oncolly.singletons.SingletonApp
 import com.teknos.oncolly.utils.SessionManager
 import kotlinx.coroutines.launch
+import androidx.compose.material.icons.filled.Info
 
-// Paleta minimalista i professional
+// Paleta de colors
 private val BackgroundColor = Color(0xFFF8F9FA)
 private val PrimaryBlue = Color(0xFF259DF4)
 private val SecondaryGreen = Color(0xFF66BB6A)
@@ -37,11 +39,15 @@ private val BorderColor = Color(0xFFE2E8F0)
 private val ErrorColor = Color(0xFFFF5252)
 
 @Composable
-fun LoginScreen(onLoginSuccess: (String) -> Unit) {
+fun LoginScreen(
+    onLoginSuccess: (String) -> Unit,
+    onNavigateToAbout: () -> Unit
+) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var missatgeError by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(false) }
+
 
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -93,7 +99,7 @@ fun LoginScreen(onLoginSuccess: (String) -> Unit) {
                     missatgeError = context.getString(R.string.credencials_incorrectes_login)
                 }
             } catch (e: Exception) {
-                missatgeError = context.getString(R.string.error_de_connexio_login, e.message)
+                missatgeError = "Connection error"
             } finally {
                 isLoading = false
             }
@@ -132,6 +138,28 @@ fun LoginScreen(onLoginSuccess: (String) -> Unit) {
                     )
                 )
         )
+        IconButton(
+            onClick = onNavigateToAbout,
+            modifier = Modifier
+                .align(Alignment.TopEnd) // Dalt a la dreta
+                .padding(16.dp)
+                .statusBarsPadding() // Perquè no quedi tapat per l'hora/bateria
+        ) {
+            // Icona "i" dins d'un cercle subtil
+            Surface(
+                shape = CircleShape,
+                color = Color.White.copy(alpha = 0.3f), // Semitransparent
+                modifier = Modifier.size(40.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = "About",
+                        tint = Color.White
+                    )
+                }
+            }
+        }
 
         Column(
             modifier = Modifier

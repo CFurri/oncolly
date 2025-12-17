@@ -13,6 +13,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.teknos.oncolly.screens.auth.AboutScreen
 import com.teknos.oncolly.screens.auth.LoginScreen
 import com.teknos.oncolly.screens.doctor.DoctorScreen
 import com.teknos.oncolly.screens.doctor.PacientDetailScreen
@@ -59,7 +60,21 @@ fun AppNavigation() {
                             popUpTo("login") { inclusive = true }
                         }
                     }
+                },
+                // Navega a l'About
+                onNavigateToAbout = {
+                    navController.navigate("about")
                 }
+            )
+        }
+
+        composable(
+            route = "about",
+            enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(300)) },
+            exitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right, tween(300)) }
+        ) {
+            AboutScreen(
+                onBack = { navController.popBackStack() }
             )
         }
 

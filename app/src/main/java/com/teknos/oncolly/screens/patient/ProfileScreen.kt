@@ -11,7 +11,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Today
@@ -117,7 +116,6 @@ fun ProfileScreen(
                 onNavigateToProfile = {}
             )
         },
-        // ELIMINAT EL floatingActionButton D'AQUÍ
         containerColor = Color.Transparent
     ) { paddingValues ->
 
@@ -135,11 +133,11 @@ fun ProfileScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
 
-                // --- CAPÇALERA AMB TÍTOL I BOTÓ EDITAR (NOU DISSENY) ---
+                // --- CAPÇALERA AMB TÍTOL I BOTÓ EDITAR  ---
                 Box(
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    // Títol centrat (Opcional, o alineat a l'esquerra com tenies)
+                    // Títol centrat
                     Text(
                         text = if (isEditing) stringResource(R.string.editant_perfil_ProfileScreen) else stringResource(R.string.el_meu_perfil_ProfileScreen),
                         style = MaterialTheme.typography.headlineSmall,
@@ -148,7 +146,7 @@ fun ProfileScreen(
                         modifier = Modifier.align(Alignment.CenterStart)
                     )
 
-                    // --- BOTÓ NOU (QUADRAT BLAU) ---
+                    // --- BOTÓ ---
                     Surface(
                         onClick = {
                             if (isEditing) saveProfile() else isEditing = true

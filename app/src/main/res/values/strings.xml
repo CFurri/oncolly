@@ -2,7 +2,6 @@
     <string name="app_name">oncolly</string>
     <string name="omple_tots_els_camps">Omple tots els camps</string>
     <string name="credencials_incorrectes_login">Credencials incorrectes</string>
-    <string name="error_de_connexio_login">Error de connexió: %1$s</string>
     <string name="benvingut_a_oncolly">Benvingut a Oncolly</string>
     <string name="la_teva_salut_la_nostra_prioritat_login">La teva salut, la nostra prioritat</string>
     <string name="correu_electronic">Correu electrònic</string>
@@ -74,8 +73,17 @@
     <string name="label_input_depositions">Ha anat bé?</string>
     <string name="label_input_medication">Medicament pres</string>
     <string name="label_input_sleep">Hores dormides</string>
-    <string name="label_input_hydration">Gots d\'aigua</string>    <string name="boto_si">SÍ</string>
+    <string name="label_input_hydration">Gots d\'aigua</string>
+    <string name="boto_si">SÍ</string>
     <string name="boto_no">NO</string>
     <string name="tornar_enrere">Tornar</string>
     <string name="visita_de_seguiment">Visita de seguiment</string>
+    <string name="about_title">Sobre l\'aplicació</string>
+    <string name="about_version">Versió 1.0.0</string>
+    <string name="about_description">Oncolly és una aplicació dissenyada per millorar la comunicació entre pacients oncològics i els seus doctors, facilitant el seguiment diari i el control de símptomes.</string>
+    <string name="about_developers">Desenvolupat per:</string>
+    <string name="about_student_1" translatable="false">Arshan Hassanzadeh</string>
+    <string name="about_student_2" translatable="false">Carles Furriols</string>
+    <string name="about_academic_year">Curs 2024-2025</string>
+    <string name="tornar">Tornar</string>
 </resources>

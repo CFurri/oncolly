@@ -72,4 +72,7 @@ dependencies {
 
     // QR Code generation
     implementation("com.google.zxing:core:3.5.2")
+
+    //Google Code Scanner
+    implementation("com.google.android.gms:play-services-code-scanner:16.1.0")
 }

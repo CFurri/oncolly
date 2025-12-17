@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material3.*
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,8 +27,11 @@ import com.teknos.oncolly.R
 import com.teknos.oncolly.network.LoginRequest
 import com.teknos.oncolly.singletons.SingletonApp
 import com.teknos.oncolly.utils.SessionManager
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 import kotlinx.coroutines.launch
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 
 // Paleta de colors
 private val BackgroundColor = Color(0xFFF8F9FA)
@@ -51,7 +55,28 @@ fun LoginScreen(
 
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
-    
+
+    // --- CONFIGURACIÓ DE L'ESCÀNER QR ---
+    val scanner = remember { GmsBarcodeScanning.getClient(context) }
+
+    // Funció per gestionar el resultat del QR
+    fun handleQrResult(qrContent: String?) {
+        if (!qrContent.isNullOrEmpty()) {
+            // AQUÍ POTS FER EL QUE VULGUIS AMB EL RESULTAT
+            // Exemple: Si el QR és un JSON amb credencials, podries omplir els camps
+            // Per ara, simplement omplim l'email com a exemple
+            email = qrContent
+            Toast.makeText(context, "QR Llegit: $qrContent", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(context, "No s'ha pogut llegir el QR", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    val backgroundBrush = Brush.verticalGradient(
+        colors = listOf(Color.White, PrimaryBlue.copy(alpha = 0.3f))
+    )
+
+
     // FUNCTION TO PERFORM LOGIN
     fun performLogin(u: String, p: String) {
         if (u.isBlank() || p.isBlank()) {
@@ -138,24 +163,63 @@ fun LoginScreen(
                     )
                 )
         )
+        // --- BOTÓ ABOUT (Dalt Dreta) ---
         IconButton(
             onClick = onNavigateToAbout,
             modifier = Modifier
-                .align(Alignment.TopEnd) // Dalt a la dreta
+                .align(Alignment.TopEnd)
                 .padding(16.dp)
-                .statusBarsPadding() // Perquè no quedi tapat per l'hora/bateria
+                .statusBarsPadding()
         ) {
-            // Icona "i" dins d'un cercle subtil
             Surface(
                 shape = CircleShape,
-                color = Color.White.copy(alpha = 0.3f), // Semitransparent
-                modifier = Modifier.size(40.dp)
+                // Canviat 0.3f per 0.6f per igualar-lo al del QR
+                color = Color.White.copy(alpha = 0.6f),
+                modifier = Modifier
+                    .size(40.dp)
+                    .shadow(4.dp, CircleShape)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = Icons.Default.Info,
                         contentDescription = "About",
-                        tint = Color.White
+                        // Canviat Color.White per PrimaryBlue per igualar-lo
+                        tint = PrimaryBlue
+                    )
+                }
+            }
+        }
+
+        // --- NOU: BOTÓ QR (Dalt Esquerra) ---
+        IconButton(
+            onClick = {
+                // LLANCEM L'ESCÀNER
+                scanner.startScan()
+                    .addOnSuccessListener { barcode ->
+                        handleQrResult(barcode.rawValue)
+                    }
+                    .addOnCanceledListener {
+                        // L'usuari ha cancel·lat (fletxa enrere)
+                    }
+                    .addOnFailureListener { e ->
+                        Toast.makeText(context, "Error càmera: ${e.message}", Toast.LENGTH_SHORT).show()
+                    }
+            },
+            modifier = Modifier
+                .align(Alignment.TopStart) // <--- ALINEAT A L'ESQUERRA
+                .padding(16.dp)
+                .statusBarsPadding()
+        ) {
+            Surface(
+                shape = CircleShape,
+                color = Color.White.copy(alpha = 0.6f),
+                modifier = Modifier.size(40.dp).shadow(4.dp, CircleShape)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Default.QrCodeScanner,
+                        contentDescription = "Scan QR",
+                        tint = PrimaryBlue
                     )
                 }
             }

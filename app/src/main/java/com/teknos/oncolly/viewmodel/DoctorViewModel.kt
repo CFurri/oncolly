@@ -12,6 +12,8 @@ import kotlinx.coroutines.launch
 
 import com.teknos.oncolly.entity.UpdatePatientRequest
 
+import com.teknos.oncolly.singletons.PatientSingleton
+
 data class DoctorUiState(
     val isLoading: Boolean = false,
     val patients: List<Pacient> = emptyList(),
@@ -63,26 +65,16 @@ class DoctorViewModel : ViewModel() {
     fun loadPatients() {
         state = state.copy(isLoading = true, error = null)
         viewModelScope.launch {
-            try {
-                val app = SingletonApp.getInstance()
-                val token = "Bearer ${app.userToken}"
-                val response = app.api.getPacients(token)
-
-                if (response.isSuccessful) {
-                    state = state.copy(
-                        isLoading = false,
-                        patients = response.body() ?: emptyList()
-                    )
-                } else {
-                    state = state.copy(
-                        isLoading = false,
-                        error = "Error: ${response.code()}"
-                    )
-                }
-            } catch (e: Exception) {
+            val result = PatientSingleton.fetchPatients()
+            result.onSuccess { patients ->
                 state = state.copy(
                     isLoading = false,
-                    error = "Connection error: ${e.message}"
+                    patients = patients
+                )
+            }.onFailure { e ->
+                state = state.copy(
+                    isLoading = false,
+                    error = "Error: ${e.message}"
                 )
             }
         }
@@ -99,45 +91,17 @@ class DoctorViewModel : ViewModel() {
     ) {
         state = state.copy(isLoading = true, error = null)
         viewModelScope.launch {
-            try {
-                val app = SingletonApp.getInstance()
-                val token = "Bearer ${app.userToken}"
-                
-                println("Debug: Create Patient")
-                println("User Role: ${app.userRole}")
-                println("Token (first 10): ${app.userToken?.take(10)}...")
-                println("Request: Name=$firstName $lastName, Email=$email, Phone=$phone, DOB=$birthDate")
-
-                val request = CreatePatientRequest(firstName, lastName, email, password, phone, birthDate)
-                val response = app.api.createPatient(token, request)
-
-                if (response.isSuccessful) {
-                    println("Success: ${response.code()}")
-                    state = state.copy(feedback = "Patient created successfully")
-                    loadPatients()
-                    onSuccess()
-                } else {
-                    val errorBody = response.errorBody()?.string()
-                    val errorMsg = if (!errorBody.isNullOrBlank()) errorBody else response.message()
-                    println("Failed: Code=${response.code()}, Msg=$errorMsg")
-
-                    val uiError = if (response.code() == 403) {
-                        "403 Forbidden: Server denied access. Verify you are logged in as a Doctor and the server has this feature deployed."
-                    } else {
-                        "Failed (${response.code()}): $errorMsg"
-                    }
-
-                    state = state.copy(
-                        isLoading = false,
-                        error = uiError
-                    )
-                }
-            } catch (e: Exception) {
-                println("Exception: ${e.message}")
-                e.printStackTrace()
+            val request = CreatePatientRequest(firstName, lastName, email, password, phone, birthDate)
+            val result = PatientSingleton.createPatient(request)
+            
+            result.onSuccess {
+                state = state.copy(feedback = "Patient created successfully")
+                loadPatients()
+                onSuccess()
+            }.onFailure { e ->
                 state = state.copy(
                     isLoading = false,
-                    error = "Connection Error: ${e.message}"
+                    error = "Failed: ${e.message}"
                 )
             }
         }
@@ -145,17 +109,11 @@ class DoctorViewModel : ViewModel() {
 
     fun deletePatient(id: String) {
         viewModelScope.launch {
-            try {
-                val app = SingletonApp.getInstance()
-                val token = "Bearer ${app.userToken}"
-                val response = app.api.deletePatient(token, id)
-                if (response.isSuccessful) {
-                    loadPatients() // Reload list
-                } else {
-                    state = state.copy(error = "Delete failed: ${response.code()}")
-                }
-            } catch (e: Exception) {
-                state = state.copy(error = "Delete error: ${e.message}")
+            val result = PatientSingleton.deletePatient(id)
+            result.onSuccess {
+                loadPatients() // Reload list
+            }.onFailure { e ->
+                state = state.copy(error = "Delete failed: ${e.message}")
             }
         }
     }

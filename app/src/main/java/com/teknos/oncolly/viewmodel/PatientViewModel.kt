@@ -3,7 +3,7 @@ package com.teknos.oncolly.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.teknos.oncolly.entity.CreateActivityRequest
-import com.teknos.oncolly.singletons.SingletonApp
+import com.teknos.oncolly.singletons.ActivitySingleton
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import java.util.UUID
@@ -24,39 +24,24 @@ class PatientViewModel : ViewModel() {
         onError: (String) -> Unit
     ) {
         viewModelScope.launch {
-            try {
-                // 1. Obtenim accés a l'API i al Token
-                val app = SingletonApp.getInstance()
-                val api = app.api
-                val token = "Bearer ${app.userToken}" // Important: Afegir "Bearer "
+            // 2. Creem l'objecte que espera el servidor
+            // El servidor vol: id (UUID), activityType, value, occurredAt
+            val request = CreateActivityRequest(
+                id = UUID.randomUUID().toString(), // Generem un ID únic per a aquesta activitat
+                activityType = tipusId,            // Ex: "walking"
+                value = valor,                     // Ex: "2000 passes"
+                occurredAt = LocalDateTime.now().toString() // Data i hora actual (ISO 8601)
+            )
 
-                // 2. Creem l'objecte que espera el servidor
-                // El servidor vol: id (UUID), activityType, value, occurredAt
-                val request = CreateActivityRequest(
-                    id = UUID.randomUUID().toString(), // Generem un ID únic per a aquesta activitat
-                    activityType = tipusId,            // Ex: "walking"
-                    value = valor,                     // Ex: "2000 passes"
-                    occurredAt = LocalDateTime.now().toString() // Data i hora actual (ISO 8601)
-                )
+            // 3. Fem la crida mitjançant el Singleton
+            val result = ActivitySingleton.createActivity(request)
 
-                // 3. Fem la crida al servidor (POST)
-                val response = api.createActivity(token, request)
-
-                // 4. Verifiquem el resultat
-                if (response.isSuccessful) {
-                    println("Activitat guardada correctament: $tipusId - $valor")
-                    onSuccess()
-                } else {
-                    val errorMsg = "Error del servidor: ${response.code()}"
-                    println(errorMsg)
-                    onError(errorMsg)
-                }
-
-            } catch (e: Exception) {
-                // 5. Gestió d'errors de connexió (Internet, servidor caigut...)
-                val errorMsg = "Error de connexió: ${e.message}"
+            result.onSuccess {
+                println("Activitat guardada correctament: $tipusId - $valor")
+                onSuccess()
+            }.onFailure { e ->
+                val errorMsg = "Error: ${e.message}"
                 println(errorMsg)
-                e.printStackTrace()
                 onError(errorMsg)
             }
         }

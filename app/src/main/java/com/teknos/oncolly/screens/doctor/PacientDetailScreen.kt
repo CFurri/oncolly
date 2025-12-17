@@ -319,19 +319,20 @@ fun SmartActivityContentDoctor(rawContent: String, color: Color) {
         Column {
             dades.forEach { (key, value) ->
                 if (key != "time_stopwatch" && value.isNotBlank()) {
-                    val (emoji, unitat) = when (key) {
-                        "distance" -> "👣" to "km"
-                        "duration", "hours" -> "⏱️" to "h" // o min depenent de la teva lògica
-                        "glasses" -> "💧" to "gots"
-                        "drug_name" -> "💊" to ""
-                        "result" -> "📝" to ""
-                        else -> "📌" to ""
+                    val unitat = when (key) {
+                        "distance" -> "km"
+                        "duration" -> "min"
+                        "hours" -> "h"
+                        "glasses" -> "gots"
+                        // Pels camps de text o boolean, no posem unitat
+                        "drug_name", "result", "description", "detail" -> ""
+                        else -> ""
                     }
                     Text(
-                        text = "$emoji $value $unitat",
+                        text = "$value $unitat",
+                        style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.SemiBold,
-                        fontSize = 16.sp,
-                        color = color
+                        color = Color(0xFF2C3E50)
                     )
                 }
             }

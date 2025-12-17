@@ -251,21 +251,17 @@ fun SmartActivityContent(rawContent: String, color: Color) {
                         modifier = Modifier.padding(vertical = 2.dp)
                     ) {
                         // Icona i Unitat segons el tipus de dada
-                        val (icona, unitat) = when (key) {
-                            "distance" -> "👣" to "km"
-                            "duration" -> "⏱️" to "min" // Minuts (o hores segons com ho guardis)
-                            "hours" -> "😴" to "h"
-                            "glasses" -> "💧" to "gots"
-                            "drug_name" -> "💊" to ""
-                            "result" -> "📝" to ""
-                            "description", "detail" -> "📄" to ""
-                            else -> "📌" to ""
+                        val unitat = when (key) {
+                            "distance" -> "km"
+                            "duration" -> "min"
+                            "hours" -> "h"
+                            "glasses" -> "gots"
+                            // Pels camps de text o boolean, no posem unitat
+                            "drug_name", "result", "description", "detail" -> ""
+                            else -> ""
                         }
-
-                        Text(text = icona, fontSize = 16.sp)
-                        Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "$value $unitat",
+                            text = "$value $unitat", // Abans era: "$icona $value $unitat"
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.SemiBold,
                             color = Color(0xFF2C3E50)

@@ -27,6 +27,7 @@ import com.teknos.oncolly.screens.doctor.PrimaryBlue
 import com.teknos.oncolly.screens.doctor.TextGrey
 import com.teknos.oncolly.viewmodel.ActivitiesViewModel
 
+
 //Activitats + Dinàmica
 import org.json.JSONObject // Necessari per llegir el text
 import androidx.compose.foundation.layout.FlowRow // Per si hi ha moltes dades
@@ -146,9 +147,7 @@ fun ActivityItem(activity: Activity, onDeleteClick: () -> Unit) {
             // 2. Textos (Centre)
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = activity.activityType?.replaceFirstChar { it.uppercase() } ?: stringResource(
-                        R.string.activitat_patientActivitiesScreen
-                    ),
+                    text = stringResource(type.title),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = TextGrey

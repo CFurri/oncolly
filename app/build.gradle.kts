@@ -9,7 +9,7 @@ android {
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.teknos.oncolly"
+        applicationId = "com.uvic.tf_202526.AHassanzadeh_CFurriols"
         minSdk = 26
         targetSdk = 34
         versionCode = 1

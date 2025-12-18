@@ -29,6 +29,8 @@ import com.teknos.oncolly.entity.Activity
 import com.teknos.oncolly.entity.Pacient
 import com.teknos.oncolly.singletons.SingletonApp
 import com.teknos.oncolly.utils.PdfGenerator
+import com.teknos.oncolly.screens.patient.ActivityType
+import androidx.compose.ui.res.stringResource
 
 //Pel JSON de l'etiqueta
 import org.json.JSONObject
@@ -166,6 +168,9 @@ fun LlistaActivitatsPacient(llista: List<Activity>) {
 
 @Composable
 fun ItemActivitat(activitat: Activity) {
+    val type = ActivityType.values().find {
+        it.id == activitat.activityType.lowercase()
+    } ?: ActivityType.WALKING
     // 1. Determinem icona i color segons el tipus
     val (icon, color) = when (activitat.activityType.lowercase()) {
         "walking" -> Pair(Icons.AutoMirrored.Filled.DirectionsWalk, PrimaryBlue)
@@ -201,7 +206,7 @@ fun ItemActivitat(activitat: Activity) {
             // Contingut Central (Títol + Dades Formatades)
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = activitat.activityType.uppercase(),
+                    text = stringResource(type.title),
                     fontWeight = FontWeight.Bold,
                     fontSize = 12.sp,
                     color = TextGrey

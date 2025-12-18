@@ -2,7 +2,7 @@ package com.teknos.oncolly.entity
 
 /**
  * Doctor agenda appointment returned by the backend.
- * Times are ISO-8601 strings (e.g., 2025-01-05T10:00:00).
+
  */
 data class Appointment(
     val id: String,

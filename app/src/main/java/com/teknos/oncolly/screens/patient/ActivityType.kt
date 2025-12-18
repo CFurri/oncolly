@@ -12,12 +12,12 @@ enum class ActivityType(
     @StringRes val title: Int,
     val icon: ImageVector,
     val color: Color,
-    // NOVA PROPIETAT: Una llista de components en lloc d'un sol InputType
+    // Una llista de components en lloc d'un sol InputType
     val components: List<ActivityComponent>
 ) {
 
 
-    // 1. WALKING: Ara té CRONÒMETRE + MINUTS + KM
+    // 1. WALKING: CRONÒMETRE + MINUTS + KM
     WALKING(
         id = "walking",
         title = R.string.walking_patient_screen,

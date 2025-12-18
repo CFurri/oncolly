@@ -12,7 +12,7 @@ class SingletonApp private constructor() {
     // --- RETROFIT i API ---
     val retrofit: Retrofit by lazy {
         val gson = GsonBuilder()
-            .setLenient() // accepta respostes una mica malformades
+            .setLenient()
             .create()
         Retrofit.Builder()
             .baseUrl("http://oncolly.arxan.me")

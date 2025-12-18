@@ -30,7 +30,6 @@ import com.teknos.oncolly.singletons.SingletonApp
 import kotlin.math.cos
 import kotlin.math.sin
 
-// Recomanació: Fes-los privats per no barrejar-los
 private val PrimaryBlue = Color(0xFF259DF4)
 val SecondaryGreen = Color(0xFF66BB6A)
 val TextGrey = Color(0xFF565D6D)
@@ -94,7 +93,7 @@ fun PacientScreen(
                     modifier = Modifier.size(100.dp)
                 )
 
-                // LLISTA CORREGIDA: Ara passem l'ID manualment perquè coincideixi amb ActivityType.kt
+                // Passem l'ID manualment perquè coincideixi amb ActivityType.kt
                 val items = listOf(
                     MenuOption("walking", stringResource(R.string.walking_patient_screen), Icons.Default.DirectionsWalk, PrimaryBlue),
                     MenuOption("eating", stringResource(R.string.eating_patient_screen), Icons.Default.Restaurant, SecondaryGreen),
@@ -102,9 +101,7 @@ fun PacientScreen(
                     MenuOption("sleep", stringResource(R.string.sleep_patient_screen), Icons.Default.Bed, SecondaryGreen),
                     MenuOption("hydration", stringResource(R.string.hydration_patient_screen), Icons.Default.LocalDrink, PrimaryBlue),
                     MenuOption("exercise", stringResource(R.string.exercise_patient_screen), Icons.Default.FitnessCenter, SecondaryGreen),
-                    // Atenció: Al teu ActivityType tens "depositions" (tot i que l'enum es diu MEDITATION)
                     MenuOption("depositions", stringResource(R.string.depositions_patient_screen), Icons.Default.Wc, PrimaryBlue), // Canviat Bathroom per Wc per coincidir amb l'altre fitxer si cal
-                    // Aquest és especial
                     MenuOption("upload_png", stringResource(R.string.upload_png_patient_screen), Icons.Default.CloudUpload, SecondaryGreen)
                 )
 

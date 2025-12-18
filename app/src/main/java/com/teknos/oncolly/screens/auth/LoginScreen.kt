@@ -33,6 +33,10 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 
+//Pel QR
+import org.json.JSONObject
+import android.net.Uri
+
 // Paleta de colors
 private val BackgroundColor = Color(0xFFF8F9FA)
 private val PrimaryBlue = Color(0xFF259DF4)
@@ -59,24 +63,6 @@ fun LoginScreen(
     // --- CONFIGURACIÓ DE L'ESCÀNER QR ---
     val scanner = remember { GmsBarcodeScanning.getClient(context) }
 
-    // Funció per gestionar el resultat del QR
-    fun handleQrResult(qrContent: String?) {
-        if (!qrContent.isNullOrEmpty()) {
-            // AQUÍ POTS FER EL QUE VULGUIS AMB EL RESULTAT
-            // Exemple: Si el QR és un JSON amb credencials, podries omplir els camps
-            // Per ara, simplement omplim l'email com a exemple
-            email = qrContent
-            Toast.makeText(context, "QR Llegit: $qrContent", Toast.LENGTH_SHORT).show()
-        } else {
-            Toast.makeText(context, "No s'ha pogut llegir el QR", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    val backgroundBrush = Brush.verticalGradient(
-        colors = listOf(Color.White, PrimaryBlue.copy(alpha = 0.3f))
-    )
-
-
     // FUNCTION TO PERFORM LOGIN
     fun performLogin(u: String, p: String) {
         if (u.isBlank() || p.isBlank()) {
@@ -96,7 +82,7 @@ fun LoginScreen(
                     if (body != null) {
                         val app = SingletonApp.getInstance()
                         app.ferLogin(body.userId, body.role, body.token)
-                        
+
                         // SAVE SESSION
                         SessionManager.saveSession(context, body.token, body.userId, body.role)
 
@@ -131,6 +117,63 @@ fun LoginScreen(
         }
     }
 
+    // Funció per gestionar el resultat del QR
+    fun handleQrResult(qrContent: String?) {
+        if (qrContent.isNullOrEmpty()) {
+            Toast.makeText(context, "No s'ha pogut llegir el QR", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        try {
+            var userDecoded = ""
+            var passDecoded = ""
+
+            // CAS A: El QR és un objecte JSON (Format ideal: {"email":"...", "password":"..."})
+            if (qrContent.trim().startsWith("{")) {
+                val json = JSONObject(qrContent)
+                if (json.has("email") && json.has("password")) {
+                    userDecoded = json.getString("email")
+                    passDecoded = json.getString("password")
+                }
+            }
+            // CAS B: El QR és un Link/URL (Ex: oncolly://login?e=admin@test.com&p=1234)
+            else if (qrContent.contains("?")) {
+                val uri = Uri.parse(qrContent)
+                userDecoded = uri.getQueryParameter("e") ?: ""
+                passDecoded = uri.getQueryParameter("p") ?: ""
+            }
+            // CAS C: Text pla (Fallback) -> Només omplim l'email
+            else {
+                userDecoded = qrContent
+            }
+
+            // ACCIÓ FINAL
+            if (userDecoded.isNotBlank()) {
+                email = userDecoded
+                // Si tenim contrasenya, l'omplim i FEM LOGIN automàticament
+                if (passDecoded.isNotBlank()) {
+                    password = passDecoded
+                    performLogin(userDecoded, passDecoded) // <--- Això és el que faltava!
+                } else {
+                    // Si només tenim email, no fem login, només ho mostrem
+                    Toast.makeText(context, "QR Parcial: Falta la contrasenya", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                Toast.makeText(context, "Format de QR desconegut", Toast.LENGTH_SHORT).show()
+            }
+
+        } catch (e: Exception) {
+            Toast.makeText(context, "Error al processar el QR: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    val backgroundBrush = Brush.verticalGradient(
+        colors = listOf(Color.White, PrimaryBlue.copy(alpha = 0.3f))
+    )
+
+
+
+
     // DEEP LINK CHECK
     LaunchedEffect(Unit) {
         val intent = (context as? Activity)?.intent
@@ -163,66 +206,50 @@ fun LoginScreen(
                     )
                 )
         )
+        // --- BOTÓ QR (Dalt Esquerra) ---
+        FilledIconButton(
+            onClick = {
+                scanner.startScan()
+                    .addOnSuccessListener { barcode -> handleQrResult(barcode.rawValue) }
+                    .addOnFailureListener { e -> Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show() }
+            },
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(16.dp)
+                .statusBarsPadding()
+                .size(48.dp) // Mida tàctil estàndard còmoda
+                .shadow(4.dp, CircleShape), // Ombra suau externa
+            colors = IconButtonDefaults.filledIconButtonColors(
+                containerColor = Color.White.copy(alpha = 0.9f), // Blanc quasi opac (més net)
+                contentColor = PrimaryBlue
+            )
+        ) {
+            Icon(
+                imageVector = Icons.Default.QrCodeScanner,
+                contentDescription = "Scan QR",
+                modifier = Modifier.size(24.dp) // Mida icona estàndard
+            )
+        }
+
         // --- BOTÓ ABOUT (Dalt Dreta) ---
-        IconButton(
+        FilledIconButton(
             onClick = onNavigateToAbout,
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(16.dp)
                 .statusBarsPadding()
+                .size(48.dp)
+                .shadow(4.dp, CircleShape),
+            colors = IconButtonDefaults.filledIconButtonColors(
+                containerColor = Color.White.copy(alpha = 0.9f),
+                contentColor = PrimaryBlue
+            )
         ) {
-            Surface(
-                shape = CircleShape,
-                // Canviat 0.3f per 0.6f per igualar-lo al del QR
-                color = Color.White.copy(alpha = 0.6f),
-                modifier = Modifier
-                    .size(40.dp)
-                    .shadow(4.dp, CircleShape)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = Icons.Default.Info,
-                        contentDescription = "About",
-                        // Canviat Color.White per PrimaryBlue per igualar-lo
-                        tint = PrimaryBlue
-                    )
-                }
-            }
-        }
-
-        // --- NOU: BOTÓ QR (Dalt Esquerra) ---
-        IconButton(
-            onClick = {
-                // LLANCEM L'ESCÀNER
-                scanner.startScan()
-                    .addOnSuccessListener { barcode ->
-                        handleQrResult(barcode.rawValue)
-                    }
-                    .addOnCanceledListener {
-                        // L'usuari ha cancel·lat (fletxa enrere)
-                    }
-                    .addOnFailureListener { e ->
-                        Toast.makeText(context, "Error càmera: ${e.message}", Toast.LENGTH_SHORT).show()
-                    }
-            },
-            modifier = Modifier
-                .align(Alignment.TopStart) // <--- ALINEAT A L'ESQUERRA
-                .padding(16.dp)
-                .statusBarsPadding()
-        ) {
-            Surface(
-                shape = CircleShape,
-                color = Color.White.copy(alpha = 0.6f),
-                modifier = Modifier.size(40.dp).shadow(4.dp, CircleShape)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = Icons.Default.QrCodeScanner,
-                        contentDescription = "Scan QR",
-                        tint = PrimaryBlue
-                    )
-                }
-            }
+            Icon(
+                imageVector = Icons.Default.Info,
+                contentDescription = "About",
+                modifier = Modifier.size(24.dp)
+            )
         }
 
         Column(

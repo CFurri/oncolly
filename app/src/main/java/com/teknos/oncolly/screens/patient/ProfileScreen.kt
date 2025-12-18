@@ -254,7 +254,7 @@ fun ProfileScreen(
                 Spacer(modifier = Modifier.weight(1f))
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // BOTÓ LOGOUT (ESTIL DOCTOR)
+                // BOTÓ LOGOUT
                 if (!isEditing) {
                     Button(
                         onClick = {
@@ -262,15 +262,13 @@ fun ProfileScreen(
                             onLogout()
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = RedLogout.copy(alpha = 0.9f)),
-                        // Shape per defecte o una mica arrodonit, com Doctor
+                        // Shape per defecte o una mica arrodonit
                         shape = ButtonDefaults.shape,
                         modifier = Modifier
-                            .fillMaxWidth(0.6f) // 60% d'amplada com a DoctorScreen
+                            .fillMaxWidth(0.6f) // 60% d'amplada
                             .height(50.dp),
                         elevation = ButtonDefaults.buttonElevation(2.dp)
                     ) {
-                        // Icona opcional, DoctorScreen no en té, però ProfileScreen sí en tenia.
-                        // Si vols clavat a Doctor, treu la Icona. Aquí la deixo per mantenir coherència visual.
                         Text(stringResource(R.string.tancar_sessio_ProfileScreen), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     }
                 }

@@ -7,7 +7,7 @@
     <string name="correu_electronic">Correu electrònic</string>
     <string name="contrasenya_login">Contrasenya</string>
     <string name="iniciar_sessio_login_button">Iniciar Sessió</string>
-    <string name="upload_png_patient_screen">Pujar PNG</string>
+    <string name="upload_png_patient_screen">Pujar anàlisi de sang</string>
     <string name="hola_salutacio_patient_screen">Hola, %1$s</string>
     <string name="com_et_trobes_avui_patient_screen">Com et trobes avui?</string>
     <string name="activities_patient_screen">Activitats</string>

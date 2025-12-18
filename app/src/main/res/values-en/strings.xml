@@ -8,7 +8,7 @@
     <string name="omple_tots_els_camps">Fill in all fields</string>
     <string name="credencials_incorrectes_login">Incorrect credentials</string>
     <string name="iniciar_sessio_login_button">Login</string>
-    <string name="upload_png_patient_screen">Upload PNG</string>
+    <string name="upload_png_patient_screen">Upload blood test</string>
     <string name="hola_salutacio_patient_screen">Hi there</string>
     <string name="com_et_trobes_avui_patient_screen">How are you feeling today?</string>
     <string name="activities_patient_screen">Activities</string>

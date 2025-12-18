@@ -39,37 +39,79 @@ enum class ActivityType(
 
     // 2. EXERCISE (Text simple)
     EXERCISE(
-        "exercise", R.string.exercise_patient_screen, Icons.Default.FitnessCenter, Color(0xFF259DF4),
-        listOf(ActivityComponent.TextInput("detail", R.string.label_input_exercise))
+        id = "exercise",
+        title = R.string.exercise_patient_screen,
+        icon = Icons.Default.FitnessCenter,
+        color = Color(0xFF259DF4),
+        components = listOf(
+            // Ara poden cronometrar la sessió de ioga/estiraments
+            ActivityComponent.Stopwatch(jsonKey = "time_stopwatch"),
+            // O posar el temps manualment
+            ActivityComponent.NumberInput(jsonKey = "duration", label = R.string.label_minuts),
+            // I explicar què han fet
+            ActivityComponent.TextInput(jsonKey = "detail", label = R.string.label_input_exercise, isTextArea = true)
+        )
     ),
 
     // 3. EATING (Text Area)
     EATING(
-        "eating", R.string.eating_patient_screen, Icons.Default.Restaurant, Color(0xFF66BB6A),
-        listOf(ActivityComponent.TextInput("description", R.string.label_input_eating, isTextArea = true))
+        id = "eating",
+        title = R.string.eating_patient_screen,
+        icon = Icons.Default.Restaurant,
+        color = Color(0xFF66BB6A),
+        components = listOf(
+            ActivityComponent.TextInput(jsonKey = "description", label = R.string.label_input_eating, isTextArea = true),
+            // Molt útil per al doctor saber si l'àpat ha sentat bé
+            ActivityComponent.BooleanInput(jsonKey = "nausea", label = R.string.label_nausea)
+        )
     ),
 
     // 4. DEPOSITIONS (Boolean)
-    MEDITATION( // Recorda canviar el nom de l'Enum si pots, sinó ho deixem així
-        "depositions", R.string.depositions_patient_screen, Icons.Default.Wc, Color(0xFF565D6D),
-        listOf(ActivityComponent.BooleanInput("result", R.string.label_input_depositions))
+    DEPOSITIONS(
+        id = "depositions",
+        title = R.string.depositions_patient_screen,
+        icon = Icons.Default.Wc,
+        color = Color(0xFF565D6D),
+        components = listOf(
+            ActivityComponent.BooleanInput(jsonKey = "result", label = R.string.label_input_depositions),
+            // Camp opcional per si volen anotar color o consistència (important mèdicament)
+            ActivityComponent.TextInput(jsonKey = "notes", label = R.string.label_notes)
+        )
     ),
 
     // 5. MEDICATION (Text)
     MEDICATION(
-        "medication", R.string.medication_patient_screen, Icons.Default.Medication, Color(0xFF565D6D),
-        listOf(ActivityComponent.TextInput("drug_name", R.string.label_input_medication))
+        id = "medication",
+        title = R.string.medication_patient_screen,
+        icon = Icons.Default.Medication,
+        color = Color(0xFF565D6D),
+        components = listOf(
+            ActivityComponent.TextInput(jsonKey = "drug_name", label = R.string.label_input_medication),
+            // Nova casella per la quantitat
+            ActivityComponent.TextInput(jsonKey = "dosage", label = R.string.label_dosi)
+        )
     ),
 
     // 6. SLEEP (Numero)
     SLEEP(
-        "sleep", R.string.sleep_patient_screen, Icons.Default.Bed, Color(0xFF66BB6A),
-        listOf(ActivityComponent.NumberInput("hours", R.string.label_input_sleep))
+        id = "sleep",
+        title = R.string.sleep_patient_screen,
+        icon = Icons.Default.Bed,
+        color = Color(0xFF66BB6A),
+        components = listOf(
+            ActivityComponent.NumberInput(jsonKey = "hours", label = R.string.label_input_sleep),
+            ActivityComponent.BooleanInput(jsonKey = "restful", label = R.string.label_descansat)
+        )
     ),
 
     // 7. HYDRATION (Numero)
     HYDRATION(
-        "hydration", R.string.hydration_patient_screen, Icons.Default.LocalDrink, Color(0xFF259DF4),
-        listOf(ActivityComponent.NumberInput("glasses", R.string.label_input_hydration))
+        id = "hydration",
+        title = R.string.hydration_patient_screen,
+        icon = Icons.Default.LocalDrink,
+        color = Color(0xFF259DF4),
+        components = listOf(
+            ActivityComponent.NumberInput(jsonKey = "glasses", label = R.string.label_input_hydration)
+        )
     );
 }

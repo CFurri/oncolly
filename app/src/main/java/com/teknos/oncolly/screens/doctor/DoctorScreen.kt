@@ -1002,7 +1002,9 @@ fun PantallaPerfilDoctor(onLogout: () -> Unit) {
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
-                text = if (isEditing) "Editant perfil" else "El meu perfil",
+                text = if (isEditing) stringResource(R.string.editant_perfil_doctorscreen) else stringResource(
+                    R.string.el_meu_perfil_doctor_screen
+                ),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 color = TextGrey,
@@ -1101,7 +1103,9 @@ fun PantallaPerfilDoctor(onLogout: () -> Unit) {
             Button(
                 onClick = onLogout, 
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF5252).copy(alpha = 0.9f)),
-                modifier = Modifier.fillMaxWidth(0.6f).height(50.dp)
+                modifier = Modifier
+                    .fillMaxWidth(0.6f)
+                    .height(50.dp)
             ) {
                 Text(stringResource(R.string.tancar_sessio_DoctorScreen), fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }

@@ -93,4 +93,17 @@
     <string name="start_timer">Iniciar</string>
     <string name="stop_timer">Aturar</string>
     <string name="reset_timer">Reiniciar</string>
+    <string name="label_nausea">Has tingut nàusees?</string>
+    <string name="label_notes">Notes addicionals</string>
+    <string name="label_dosi">Dosi (mg/u)</string>
+    <string name="label_descansat">T\'has llevat descansat?</string>
+    <string name="editant_perfil_doctorscreen">Editant perfil</string>
+    <string name="el_meu_perfil_doctor_screen">El meu perfil</string>
+    <string name="activitats_pacientdetailscreen">Activitats</string>
+    <string name="fitxa_pacientdetailscreen">Fitxa</string>
+    <string name="pacient_actiu_pacientdetailscreen">Pacient Actiu</string>
+    <string name="compartir_credencials_pacientdetailscreen">Compartir Credencials</string>
+    <string name="correu_electr_nic_pacientdetailscreen">Correu Electrònic</string>
+    <string name="tel_fon_de_contacte_pacientdetailscreen">Telèfon de contacte</string>
+    <string name="data_de_naixement_pacientdetailscreen">Data de Naixement</string>
 </resources>

@@ -90,4 +90,17 @@
     <string name="start_timer">Start</string>
     <string name="stop_timer">Stop</string>
     <string name="reset_timer">Reset</string>
+    <string name="label_nausea">Have you had nausea?</string>
+    <string name="label_notes">"Additional notes "</string>
+    <string name="label_dosi">Dose (mg/unit)</string>
+    <string name="label_descansat">Did you wake up rested?</string>
+    <string name="editant_perfil_doctorscreen">Editing profile</string>
+    <string name="el_meu_perfil_doctor_screen">My profile</string>
+    <string name="activitats_pacientdetailscreen">Activities</string>
+    <string name="fitxa_pacientdetailscreen">Patient record</string>
+    <string name="pacient_actiu_pacientdetailscreen">Active patient</string>
+    <string name="compartir_credencials_pacientdetailscreen">Share credentials</string>
+    <string name="correu_electr_nic_pacientdetailscreen">Email</string>
+    <string name="tel_fon_de_contacte_pacientdetailscreen">Contact telephone number</string>
+    <string name="data_de_naixement_pacientdetailscreen">Date of birth</string>
 </resources>

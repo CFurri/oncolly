@@ -20,9 +20,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.teknos.oncolly.R
 import com.teknos.oncolly.entity.Activity
 import com.teknos.oncolly.entity.Pacient
 import com.teknos.oncolly.singletons.SingletonApp
@@ -85,18 +87,22 @@ fun PacientDetailScreen(pacientId: String, onBack: () -> Unit) {
             )
         }
     ) { padding ->
-        Column(modifier = Modifier.padding(padding).fillMaxSize()) {
+        Column(modifier = Modifier
+            .padding(padding)
+            .fillMaxSize()) {
 
             // Custom Tabs
-            Row(modifier = Modifier.fillMaxWidth().background(Color.White)) {
+            Row(modifier = Modifier
+                .fillMaxWidth()
+                .background(Color.White)) {
                 TabItem(
-                    text = "Activitats",
+                    text = stringResource(R.string.activitats_pacientdetailscreen),
                     icon = Icons.AutoMirrored.Filled.List,
                     isSelected = selectedTab == 0,
                     onClick = { selectedTab = 0 }
                 )
                 TabItem(
-                    text = "Fitxa",
+                    text = stringResource(R.string.fitxa_pacientdetailscreen),
                     icon = Icons.Default.Info,
                     isSelected = selectedTab == 1,
                     onClick = { selectedTab = 1 }
@@ -132,7 +138,10 @@ fun RowScope.TabItem(text: String, icon: ImageVector, isSelected: Boolean, onCli
         Text(text, color = color, fontWeight = if(isSelected) FontWeight.Bold else FontWeight.Normal, fontSize = 14.sp)
         Spacer(modifier = Modifier.height(8.dp))
         if (isSelected) {
-            Box(modifier = Modifier.height(2.dp).width(40.dp).background(PrimaryBlue))
+            Box(modifier = Modifier
+                .height(2.dp)
+                .width(40.dp)
+                .background(PrimaryBlue))
         }
     }
 }
@@ -176,7 +185,9 @@ fun ItemActivitat(activitat: Activity) {
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
-            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Icona Visual
@@ -232,7 +243,7 @@ fun ContingutPacient(pacient: Pacient) {
             Spacer(modifier = Modifier.width(16.dp))
             Column {
                 Text(text = "${pacient.firstName} ${pacient.lastName}", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TextDark)
-                Text(text = "Pacient Actiu", fontSize = 14.sp, color = SecondaryGreen, fontWeight = FontWeight.SemiBold)
+                Text(text = stringResource(R.string.pacient_actiu_pacientdetailscreen), fontSize = 14.sp, color = SecondaryGreen, fontWeight = FontWeight.SemiBold)
             }
         }
 
@@ -247,30 +258,32 @@ fun ContingutPacient(pacient: Pacient) {
                 }
             },
             colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
-            modifier = Modifier.fillMaxWidth().height(50.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp),
             shape = RoundedCornerShape(12.dp)
         ) {
             Icon(Icons.Default.Share, contentDescription = null, tint = Color.White)
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Compartir Credencials", color = Color.White, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.compartir_credencials_pacientdetailscreen), color = Color.White, fontWeight = FontWeight.Bold)
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
         InfoCard(
-            titol = "Correu Electrònic",
+            titol = stringResource(R.string.correu_electr_nic_pacientdetailscreen),
             valor = pacient.email,
             icon = Icons.Default.Email
         )
         Spacer(modifier = Modifier.height(12.dp))
         InfoCard(
-            titol = "Telèfon de contacte",
+            titol = stringResource(R.string.tel_fon_de_contacte_pacientdetailscreen),
             valor = pacient.phoneNumber ?: "No informat",
             icon = Icons.Default.Phone
         )
         Spacer(modifier = Modifier.height(12.dp))
         InfoCard(
-            titol = "Data de Naixement",
+            titol = stringResource(R.string.data_de_naixement_pacientdetailscreen),
             valor = pacient.dateOfBirth ?: "Desconeguda",
             icon = Icons.Default.DateRange
         )
